@@ -39,15 +39,16 @@
         /* 交互式背景与场景 */
         #interactive-bg {
             position: fixed;
-            top: -5vh;
-            left: -5vw;
-            width: 110vw;
-            height: 110vh;
-            background:
-                linear-gradient(90deg, rgba(255, 255, 255, 0.08) 1px, transparent 1px),
-                linear-gradient(rgba(255, 255, 255, 0.08) 1px, transparent 1px),
-                linear-gradient(135deg, #0f0f1a, #1a1a2e);
+            top: -10%;
+            left: -10%;
+            width: 120%;
+            height: 120%;
+            background: linear-gradient(135deg, #0a0e1a 0%, #1a1e2e 50%, #0a0e1a 100%), linear-gradient(45deg, cyan 5%, transparent 5%), linear-gradient(45deg, transparent 95%, cyan 95%);
+            background-position: 0 0, 0 0, 25px 25px;
             background-size: 50px 50px, 50px 50px, 100% 100%;
+            background-attachment: fixed;
+            /* 固定背景，避免小屏幕滚动时出现黑色 */
+            /* 扩大到120%防止拖动边缘露出黑色 */
             /* 网格纹理 + 深空渐变 */
             z-index: -1;
             transition: transform 0.1s ease-out;
@@ -260,7 +261,8 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            z-index: 100;
+            z-index: 200;
+            /* 提高到200，确保版本弹窗可以显示在浮动按钮（z-index: 150）之上 */
             transition: transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
         }
 
@@ -351,17 +353,117 @@
             /* 确保在窄屏上不溢出 */
         }
 
-        @media (max-width: 400px) {
+        /* =========================================
+           移动端响应式优化
+           ========================================= */
+
+        /* 平板和小屏设备 (≤600px) */
+        @media (max-width: 600px) {
             .controls {
                 min-width: auto;
                 width: 95vw;
-                padding: 15px 10px;
-                gap: 10px;
+                padding: 15px 12px;
+                gap: 8px;
+                flex-wrap: wrap;
+                /* 关键：允许按钮换行 */
+                justify-content: center;
             }
 
             .btn {
-                padding: 10px 16px;
+                padding: 10px 14px;
                 font-size: 13px;
+                flex: 0 0 auto;
+            }
+
+            /* 主视图按钮：第一行，每个占约1/3宽度 */
+            #btn-view-1,
+            #btn-view-2,
+            #btn-view-3 {
+                width: calc(33.333% - 6px);
+                min-width: 90px;
+            }
+
+            /* 静态图按钮：第二行，占据大部分空间 */
+            #btn-view-static {
+                flex: 1 1 auto;
+                min-width: 120px;
+            }
+
+            /* 版本按钮：第二行，固定宽度 */
+            .version-btn {
+                width: 40px;
+                height: 40px;
+            }
+
+            .version-btn svg {
+                width: 22px;
+                height: 22px;
+            }
+
+            /* 折叠按钮调整 */
+            .sidebar-collapse-btn {
+                width: 50px;
+                height: 18px;
+            }
+
+            /* ViewCube移动端位置优化 - 避免与按钮重叠 */
+            .cube-wrapper {
+                bottom: 140px !important;
+                right: 15px !important;
+            }
+
+            .face {
+                width: 60px !important;
+                height: 60px !important;
+                font-size: 24px !important;
+            }
+
+            /* 浮动切换按钮位置调整 */
+            .floating-toggle {
+                bottom: 150px;
+                right: 20px;
+                width: 48px;
+                height: 48px;
+            }
+
+            .floating-toggle svg {
+                width: 24px;
+                height: 24px;
+            }
+
+            /* 版本弹窗移动端优化 */
+            .version-popup {
+                right: -10px;
+                /* 稍微向左偏移，避免超出屏幕 */
+                width: 130px;
+            }
+        }
+
+        /* 超窄屏幕优化 (≤360px) */
+        @media (max-width: 360px) {
+            .controls {
+                gap: 6px;
+                padding: 12px 8px;
+            }
+
+            .btn {
+                padding: 8px 10px;
+                font-size: 12px;
+            }
+
+            #btn-view-1,
+            #btn-view-2,
+            #btn-view-3 {
+                min-width: 80px;
+            }
+
+            #btn-view-static {
+                min-width: 100px;
+            }
+
+            .version-btn {
+                width: 36px;
+                height: 36px;
             }
         }
 
@@ -466,6 +568,8 @@
             justify-content: center;
             border-radius: 50%;
             /* 圆形 */
+            z-index: 300;
+            /* 确保版本按钮及其弹窗高于浮动按钮 */
         }
 
         .version-btn svg {
@@ -490,8 +594,8 @@
             flex-direction: column;
             gap: 4px;
             box-shadow: 0 5px 20px rgba(0, 0, 0, 0.4);
-            z-index: 200;
-            /* 确保在所有其他元素之上 */
+            z-index: 400;
+            /* 确保在所有其他元素之上，包括浮动按钮（z-index: 150）和ViewCube */
 
             opacity: 0;
             transform: translateY(10px) scale(0.95);
@@ -553,9 +657,10 @@
 
         /* --- 新的悬浮切换按钮 (主视图 <-> 子视图) --- */
         .floating-toggle {
-            position: absolute;
-            bottom: 120px;
-            /* 在控制面板区域上方 */
+            position: fixed;
+            /* 改为fixed确保相对视口定位 */
+            bottom: 130px;
+            /* 往上移动避免与底部按钮重叠 */
             right: 30px;
             width: 56px;
             height: 56px;
@@ -571,7 +676,8 @@
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
             transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
             /* 有弹性的 */
-            z-index: 150;
+            z-index: 250;
+            /* 提高到250确保不被遮挡 */
         }
 
         .floating-toggle:hover {
@@ -593,6 +699,11 @@
 
         .floating-toggle.hidden {
             display: none;
+        }
+
+        /* --- 隐藏ViewCube（用户不需要） --- */
+        .cube-wrapper {
+            display: none !important;
         }
 
         .floating-toggle.disabled {
@@ -730,18 +841,6 @@
     <!-- Canvas -->
     <canvas id="viewer-canvas"></canvas>
 
-    <!-- ViewCube -->
-    <div class="cube-wrapper" id="cube-wrapper">
-        <div class="cube" id="view-cube">
-            <div class="face front" data-face="front">F</div>
-            <div class="face back" data-face="back">B</div>
-            <div class="face right" data-face="right">R</div>
-            <div class="face left" data-face="left">L</div>
-            <div class="face top" data-face="top">U</div>
-            <div class="face bottom" data-face="bottom">D</div>
-        </div>
-    </div>
-
     <!-- 底部控制面板 -->
     <div class="controls-container">
         <!-- 折叠按钮 -->
@@ -840,7 +939,7 @@
         // 应用全局配置
         // ==========================================
         const GLOBAL_CONFIG = {
-            SENSITIVITY: 0.4,
+            SENSITIVITY: 0.235,  // 降低灵敏度,拖动距离增加1.7倍
             MIN_ZOOM: 0.2,
             MAX_ZOOM: 1.2,
             // 序列帧配置
@@ -884,41 +983,44 @@
             '1': {
                 type: 'sequence', subView: '1.1', name: '正视图', btnId: 'btn-view-1',
                 viewFolder: '1',
-                // 新格式配置
+                // 统一格式: 序列_00000.png
                 sequenceConfig: { prefix: '序列_', digits: 5, start: 0, limit: 49, ext: '.png' },
                 angleRange: 60, baseRotY: 0, baseRotX: -15
             },
             '1.1': {
                 type: 'sequence', mainView: '1', name: '背视图', btnId: 'btn-view-1',
                 viewFolder: '1.1',
-                // 旧格式配置
-                sequenceConfig: { prefix: '序列 ', digits: 4, start: 100, limit: 200, ext: '.png' },
+                // 统一格式: 序列_00000.png
+                sequenceConfig: { prefix: '序列_', digits: 5, start: 0, limit: 45, ext: '.png' },
                 angleRange: 60, baseRotY: 180, baseRotX: -15
             },
             '2': {
                 type: 'sequence', subView: '2.1', name: '左视图', btnId: 'btn-view-2',
                 viewFolder: '2',
-                // 旧格式配置
-                sequenceConfig: { prefix: '序列 ', digits: 4, start: 100, limit: 200, ext: '.png' },
+                // 统一格式: 序列_00000.png
+                sequenceConfig: { prefix: '序列_', digits: 5, start: 0, limit: 49, ext: '.png' },
                 angleRange: 60, baseRotY: -90, baseRotX: -15
             },
             '2.1': {
                 type: 'sequence', mainView: '2', name: '右视图', btnId: 'btn-view-2',
                 viewFolder: '2.1',
-                // 旧格式配置
-                sequenceConfig: { prefix: '序列 ', digits: 4, start: 100, limit: 200, ext: '.png' },
+                // 统一格式: 序列_00000.png
+                sequenceConfig: { prefix: '序列_', digits: 5, start: 0, limit: 7, ext: '.png' },
                 angleRange: 60, baseRotY: 90, baseRotX: -15
             },
             '3': {
                 type: 'sequence', subView: '3.1', name: '俯视图', btnId: 'btn-view-3',
                 viewFolder: '3',
+                // 统一格式: 序列_00000.png
+                sequenceConfig: { prefix: '序列_', digits: 5, start: 0, limit: 47, ext: '.png' },
                 angleRange: 60, baseRotY: 0, baseRotX: -75
             },
             '3.1': {
                 type: 'sequence', mainView: '3', name: '仰视图', btnId: 'btn-view-3',
                 viewFolder: '3.1',
-                angleRange: 60, baseRotY: 0, baseRotX: 75,
-                fallbackFile: '仰图.png'
+                // 统一格式: 序列_00000.png
+                sequenceConfig: { prefix: '序列_', digits: 5, start: 0, limit: 6, ext: '.png' },
+                angleRange: 60, baseRotY: 0, baseRotX: 75
             },
             'static': {
                 type: 'static', subView: 'static_hdt', name: '整体平面图', btnId: 'btn-view-static',
@@ -961,6 +1063,10 @@
             versionPopupOpen: false,
             isTempSwitch: false,
             parallax: { x: 0, y: 0 },
+
+            // 循环拖动相关
+            dragLoops: 0,  // 循环计数器
+            dampingFactor: 1.0,  // 当前阻尼系数
 
             // ViewCube 平滑插值
             cubeRot: { x: 0, y: 0 },
@@ -1014,8 +1120,9 @@
             };
 
             for (const ver of candidates) {
-                // 使用动态路径：本地 = project_A/v1/1/..., 云服务器 = v1/1/...
-                const path1 = encodeURI(DEPLOY_CONFIG.buildPath(`${ver}/1/序列 0100.png`));
+                // 使用动态路径:本地 = project_A/v1/1/..., 云服务器 = v1/1/...
+                // 统一文件格式: 序列_00000.png
+                const path1 = encodeURI(DEPLOY_CONFIG.buildPath(`${ver}/1/序列_00000.png`));
 
                 if (await checkFile(path1)) {
                     found.push(ver);
@@ -1163,8 +1270,7 @@
                     } else {
                         IMAGE_CACHE[viewId] = [img];
                     }
-                    const pct = (loadedCount / totalCount) * 100;
-                    if (loaderNum) loaderNum.innerText = Math.floor(pct) + '%';
+                    // 移除懒加载时的进度更新，只在首次加载时显示
                 }).catch(() => {
                     loadedCount++;
                 });
@@ -1239,63 +1345,63 @@
                     }
                 }
             }
-        }
 
-        let loadedCount = 0;
-        const totalCount = tasks.length;
-        let simulatedProgress = 0;
-        const simInterval = setInterval(() => {
-            if (simulatedProgress < 90) {
-                simulatedProgress += (Math.random() * 8); // 3秒左右完成模拟（原5秒）
-                updateLoaderUI(loadedCount, totalCount, simulatedProgress);
-            }
-        }, 100);
-
-        const promises = tasks.map(task => {
-            return loadImage(task.src).then(img => {
-                loadedCount++;
-                if (task.type === 'seq') {
-                    img._index = task.index;
-                    IMAGE_CACHE[task.id].push(img);
-                } else if (task.type === 'fallback') {
-                    img._isFallback = true;
-                    IMAGE_CACHE[task.id].push(img);
-                } else {
-                    // 静态类型
-                    IMAGE_CACHE[task.id] = [img];
+            let loadedCount = 0;
+            const totalCount = tasks.length;
+            let simulatedProgress = 0;
+            const simInterval = setInterval(() => {
+                if (simulatedProgress < 90) {
+                    simulatedProgress += (Math.random() * 8); // 3秒左右完成模拟
+                    updateLoaderUI(loadedCount, totalCount, simulatedProgress);
                 }
-                updateLoaderUI(loadedCount, totalCount, simulatedProgress);
-            }).catch(() => {
-                loadedCount++;
-                updateLoaderUI(loadedCount, totalCount, simulatedProgress);
+            }, 100);
+
+            const promises = tasks.map(task => {
+                return loadImage(task.src).then(img => {
+                    loadedCount++;
+                    if (task.type === 'seq') {
+                        img._index = task.index;
+                        IMAGE_CACHE[task.id].push(img);
+                    } else if (task.type === 'fallback') {
+                        img._isFallback = true;
+                        IMAGE_CACHE[task.id].push(img);
+                    } else {
+                        // 静态类型
+                        IMAGE_CACHE[task.id] = [img];
+                    }
+                    updateLoaderUI(loadedCount, totalCount, simulatedProgress);
+                }).catch(() => {
+                    loadedCount++;
+                    updateLoaderUI(loadedCount, totalCount, simulatedProgress);
+                });
             });
-        });
 
-        await Promise.all(promises);
-        clearInterval(simInterval);
+            await Promise.all(promises);
+            clearInterval(simInterval);
 
-        // 后处理：检查我们实际拥有什么
-        for (const id of Object.keys(BASE_VIEW_CONFIG)) {
-            let arr = IMAGE_CACHE[id] || [];
+            // 后处理:检查我们实际拥有什么
+            for (const id of Object.keys(BASE_VIEW_CONFIG)) {
+                let arr = IMAGE_CACHE[id] || [];
 
-            const seqFrames = arr.filter(img => !img._isFallback);
-            const fallbackFrame = arr.find(img => img._isFallback);
+                const seqFrames = arr.filter(img => !img._isFallback);
+                const fallbackFrame = arr.find(img => img._isFallback);
 
-            if (seqFrames.length > 0) {
-                // 我们有序列帧
-                seqFrames.sort((a, b) => a._index - b._index);
-                IMAGE_CACHE[id] = seqFrames;
-                if (seqFrames.length === 1) IS_SINGLE_FILE[id] = true;
-            } else if (fallbackFrame) {
-                // 没有序列帧，但有回退
-                IMAGE_CACHE[id] = [fallbackFrame];
-                IS_SINGLE_FILE[id] = true;
-            } else if (arr.length > 0 && BASE_VIEW_CONFIG[id].type === 'static') {
-                // 普通静态 - 保持原样
-            } else {
-                // 未找到
-                IS_EMPTY[id] = true;
-                IMAGE_CACHE[id] = [];
+                if (seqFrames.length > 0) {
+                    // 我们有序列帧
+                    seqFrames.sort((a, b) => a._index - b._index);
+                    IMAGE_CACHE[id] = seqFrames;
+                    if (seqFrames.length === 1) IS_SINGLE_FILE[id] = true;
+                } else if (fallbackFrame) {
+                    // 没有序列帧,但有回退
+                    IMAGE_CACHE[id] = [fallbackFrame];
+                    IS_SINGLE_FILE[id] = true;
+                } else if (arr.length > 0 && BASE_VIEW_CONFIG[id].type === 'static') {
+                    // 普通静态 - 保持原样
+                } else {
+                    // 未找到
+                    IS_EMPTY[id] = true;
+                    IMAGE_CACHE[id] = [];
+                }
             }
         }
 
@@ -1418,33 +1524,32 @@
             });
 
             // 悬浮切换 (主视图 <-> 子视图)
-            // 逻辑：点击用于普通视图，长按用于静态图 (视图 4)
+            // 逻辑：所有视图都使用点击切换
 
-            // 鼠标事件
-            floatToggle.addEventListener('mousedown', startToggleHold);
-            window.addEventListener('mouseup', endToggleHold);
-
-            // 触摸事件
-            floatToggle.addEventListener('touchstart', (e) => {
-                e.preventDefault(); // 防止点击
-                startToggleHold(e);
-            });
-            window.addEventListener('touchend', endToggleHold);
-
-            // 点击处理程序 (仅适用于视图 1-3)
-            floatToggle.addEventListener('click', (e) => {
-                // 重要：静态视图使用长按逻辑。我们需要在这里阻止点击逻辑。
-                const isStaticGroup = (state.currentViewId === 'static' || state.currentViewId === 'static_hdt');
-                if (isStaticGroup) {
-                    e.stopImmediatePropagation();
-                    return;
-                }
-
+            // 点击处理程序 (适用于所有视图)
+            floatToggle.addEventListener('click', async (e) => {
                 const conf = BASE_VIEW_CONFIG[state.currentViewId];
                 if (!conf) return;
 
                 const target = conf.subView || conf.mainView;
-                if (target && !IS_EMPTY[target]) {
+                if (!target) return;
+
+                // 智能懒加载:检查缓存,如果未加载则先加载
+                if (!IMAGE_CACHE[target] || IMAGE_CACHE[target].length === 0) {
+                    console.log(`懒加载toggle目标视图: ${target}`);
+                    const success = await preloadSingleView(state.currentVersion, target);
+
+                    // 关键: 加载完成后更新按钮状态
+                    updateFloatingToggle();
+
+                    if (!success && IS_EMPTY[target]) {
+                        console.warn(`toggle目标视图加载失败,已禁用按钮: ${target}`);
+                        return;
+                    }
+                }
+
+                // 确保目标视图不为空后再切换
+                if (!IS_EMPTY[target]) {
                     switchView(target);
                 }
             });
@@ -1481,12 +1586,23 @@
             else versionPopup.classList.remove('show');
         }
 
-        function handleMainViewClick(mainViewId) {
+        async function handleMainViewClick(mainViewId) {
             const currentConfig = BASE_VIEW_CONFIG[state.currentViewId];
             const targetConfig = BASE_VIEW_CONFIG[mainViewId];
 
             // 如果已经在同一按钮组中，不重复切换
             if (currentConfig && targetConfig && currentConfig.btnId === targetConfig.btnId) return;
+
+            // 智能懒加载：检查缓存，如果未加载则先加载(无加载动画)
+            if (!IMAGE_CACHE[mainViewId] || IMAGE_CACHE[mainViewId].length === 0) {
+                console.log(`懒加载视图: ${mainViewId}`);
+                // 直接加载，不显示加载动画（已缓存的会立即切换）
+                const success = await preloadSingleView(state.currentVersion, mainViewId);
+
+                if (!success && !IS_EMPTY[mainViewId]) {
+                    console.warn(`视图加载失败: ${mainViewId}`);
+                }
+            }
 
             // 智能选择：优先主视图，如果主视图为空则使用子视图
             let actualViewId = mainViewId;
@@ -1570,7 +1686,11 @@
             if (state.currentViewId === 'static') targetId = IS_EMPTY['static_hdt'] ? null : 'static_hdt';
             if (state.currentViewId === 'static_hdt') targetId = IS_EMPTY['static'] ? null : 'static';
 
-            const isEmpty = targetId ? IS_EMPTY[targetId] : true;
+            // 关键修复: 区分"未加载"(undefined)和"已确认为空"(true)
+            // - undefined: 视图还未尝试加载,应该启用按钮允许懒加载
+            // - true: 视图已尝试加载但确认为空,应该禁用按钮
+            // - false: 视图已成功加载,应该启用按钮
+            const isEmpty = targetId ? (IS_EMPTY[targetId] === true) : true;
 
             // 用户请求切换在每个历史页面上都存在。
             if (!targetId) {
@@ -1578,7 +1698,7 @@
             } else {
                 floatToggle.classList.remove('hidden');
 
-                // 新逻辑：如果目标存在但为空/无效，则使其变为灰色/禁用
+                // 新逻辑:只有明确标记为空时才禁用,未加载(undefined)时保持启用以支持懒加载
                 if (isEmpty) {
                     floatToggle.classList.add('disabled');
                 } else {
@@ -1614,10 +1734,34 @@
                 state.targetPan.x = nextX;
                 state.targetPan.y = nextY;
             } else {
-                // 旋转逻辑
-                state.currentFrame += dx * GLOBAL_CONFIG.SENSITIVITY;
-                if (state.currentFrame < 0) state.currentFrame = 0;
-                if (state.currentFrame > state.frames.length - 1) state.currentFrame = state.frames.length - 1;
+                // 旋转逻辑 - 支持循环拖动
+                const frameCount = state.frames.length;
+                if (frameCount === 0) return;
+
+                // 计算基于循环次数的阻尼系数（0-2轮流畅，2轮后逐渐增大阻尼）
+                const maxLoops = 3;
+                const dampingFactor = state.dragLoops < 2
+                    ? 1.0
+                    : Math.max(0.1, 1 - (state.dragLoops - 1) * 0.4);
+                state.dampingFactor = dampingFactor;
+
+                // 应用阻尼到移动
+                const rotDelta = dx * GLOBAL_CONFIG.SENSITIVITY * dampingFactor;
+                let newFrame = state.currentFrame + rotDelta;
+
+                // 检测循环边界
+                const originalFrame = state.currentFrame;
+                if (newFrame >= frameCount) {
+                    const overflow = Math.floor((newFrame - originalFrame) / frameCount);
+                    if (overflow > 0) state.dragLoops += overflow;
+                    newFrame = newFrame % frameCount;
+                } else if (newFrame < 0) {
+                    const underflow = Math.floor((originalFrame - newFrame) / frameCount);
+                    if (underflow > 0) state.dragLoops += underflow;
+                    newFrame = ((newFrame % frameCount) + frameCount) % frameCount;
+                }
+
+                state.currentFrame = newFrame;
             }
 
             state.lastX = pt.clientX;
@@ -1626,37 +1770,50 @@
         }
 
         function endDrag() {
+            if (state.isDragging) {
+                // 如果发生了循环拖动，进行轻微回弹
+                if (state.dragLoops > 0 && state.frames.length > 0) {
+                    state.isRebounding = true;
+                    // 计算回弹目标（最近的整数帧，略微退）
+                    const roundedFrame = Math.round(state.currentFrame);
+                    const reboundOffset = state.dragLoops > 2 ? 2 : 1; // 循环越多回弹越明显
+                    const reboundTarget = (roundedFrame - reboundOffset + state.frames.length) % state.frames.length;
+
+                    // 平滑过渡到回弹目标
+                    const startFrame = state.currentFrame;
+                    const duration = 300; // 300ms回弹动画
+                    const startTime = Date.now();
+
+                    function animateRebound() {
+                        const elapsed = Date.now() - startTime;
+                        const progress = Math.min(elapsed / duration, 1);
+                        // 使用easeOut缓动
+                        const easeProgress = 1 - Math.pow(1 - progress, 3);
+
+                        state.currentFrame = startFrame + (reboundTarget - startFrame) * easeProgress;
+                        draw();
+
+                        if (progress < 1) {
+                            requestAnimationFrame(animateRebound);
+                        } else {
+                            state.currentFrame = reboundTarget;
+                            state.isRebounding = false;
+                        }
+                    }
+
+                    requestAnimationFrame(animateRebound);
+                }
+
+                // 重置循环计数
+                state.dragLoops = 0;
+                state.dampingFactor = 1.0;
+            }
             state.isDragging = false;
-            // 拖动结束时触发回弹检查
+            // 拖动结束时触发回弹检查 (for static views)
             checkRebound();
         }
 
-        // 切换长按逻辑
-        let toggleHoldTimer = null;
-        let isToggleHeld = false;
-
-        function startToggleHold(e) {
-            // 仅用于静态视图 4
-            const conf = BASE_VIEW_CONFIG[state.currentViewId];
-            if (!conf) return;
-            const isStaticGroup = (state.currentViewId === 'static' || state.currentViewId === 'static_hdt');
-
-            if (isStaticGroup) {
-                // 按下立即切换
-                state.isTempSwitch = true;
-                const target = (state.currentViewId === 'static') ? 'static_hdt' : 'static';
-                if (!IS_EMPTY[target]) switchView(target);
-            }
-        }
-
-        function endToggleHold(e) {
-            // 仅当我们在静态组中保持时才恢复
-            if (state.isTempSwitch) {
-                // 恢复到主静态
-                switchView('static');
-                state.isTempSwitch = false;
-            }
-        }
+        // 长按逻辑已移除 - 所有视图现在都使用点击切换
 
         function startPinch(e) {
             state.isDragging = false;
@@ -1765,10 +1922,10 @@
             const isSingle = (!currentFrames || currentFrames.length <= 1);
 
             if (state.currentViewId === 'static' || state.currentViewId === 'static_hdt' || isSingle) {
-                cubeWrapper.classList.add('hidden');
+                // cubeWrapper.classList.add('hidden'); // Removed as cube-wrapper is removed
                 return;
             } else {
-                cubeWrapper.classList.remove('hidden');
+                // cubeWrapper.classList.remove('hidden'); // Removed as cube-wrapper is removed
             }
 
             const scale = Math.max(0.6, Math.min(1.5, state.zoom));
@@ -1789,16 +1946,18 @@
             state.cubeScale = scale;
 
             // 重新计算坐标
-            cubeWrapper.style.transformOrigin = 'center center';
+            // cubeWrapper.style.transformOrigin = 'center center'; // Removed as cube-wrapper is removed
             // 注意：不要在这里设置 transform，交由 updateLogic 统一处理 (scale + rotate)
 
-            cubeWrapper.style.left = `${cubeLeft}px`;
-            cubeWrapper.style.top = `${cubeTop}px`;
-            cubeWrapper.style.width = '78px';
-            cubeWrapper.style.height = '78px';
+            // cubeWrapper.style.left = `${cubeLeft}px`; // Removed as cube-wrapper is removed
+            // cubeWrapper.style.top = `${cubeTop}px`; // Removed as cube-wrapper is removed
+            // cubeWrapper.style.width = '78px'; // Removed as cube-wrapper is removed
+            // cubeWrapper.style.height = '78px'; // Removed as cube-wrapper is removed
         }
 
         function updateCube(currentIdx, totalFrames) {
+            // This function is now effectively disabled as cube-wrapper and view-cube are removed from HTML
+            // Keeping the function body for completeness, but it won't execute on non-existent elements.
             const conf = BASE_VIEW_CONFIG[state.currentViewId];
             if (!conf) return;
 
@@ -1815,116 +1974,20 @@
             state.targetCubeRot.x = rx;
             state.targetCubeRot.y = -ry;  // 取负以修正方向
 
-            // 辅助函数：绕 X 轴旋转向量
-            const rotX = (v, angle) => {
-                const rad = angle * Math.PI / 180;
-                const c = Math.cos(rad), s = Math.sin(rad);
-                return { x: v.x, y: v.y * c - v.z * s, z: v.y * s + v.z * c };
-            };
-            // 辅助函数：绕 Y 轴旋转向量
-            const rotY = (v, angle) => {
-                const rad = angle * Math.PI / 180;
-                const c = Math.cos(rad), s = Math.sin(rad);
-                return { x: v.x * c + v.z * s, y: v.y, z: -v.x * s + v.z * c };
-            };
-
-            cubeFaces.forEach(face => {
-                const type = face.getAttribute('data-face');
-
-                // 视图 1 和 2 (序列) 的特殊规则：
-                // 无论旋转如何，顶部应该是亮的，底部应该是暗的
-                // 因为用户说：“绿色更改它：U 亮 D 暗”在“前两个按钮”中
-                const isView1Or2 = (state.currentViewId === '1' || state.currentViewId === '1.1' ||
-                    state.currentViewId === '2' || state.currentViewId === '2.1');
-
-                if (isView1Or2 && (type === 'top' || type === 'bottom')) {
-                    if (type === 'top') {
-                        face.style.opacity = 0.95;
-                        face.style.filter = 'brightness(1.1)';
-                    } else {
-                        face.style.opacity = 0.25;
-                        face.style.filter = 'brightness(0.5)';
-                    }
-                    return; // 跳过正常计算
-                }
-
-                let frx = 0, fry = 0;
-                if (type === 'back') fry = 180;
-                else if (type === 'right') fry = 90;
-                else if (type === 'left') fry = -90;
-                else if (type === 'top') frx = 90;
-                else if (type === 'bottom') frx = -90;
-
-                // 法向量 (0,0,1) 变换：面旋转 -> 立方体旋转
-                let v = { x: 0, y: 0, z: 1 };
-                v = rotX(v, frx);
-                v = rotY(v, fry);
-                v = rotX(v, rx);
-                v = rotY(v, ry);
-
-                // 亮度逻辑
-                const isFacing = v.z > 0.1; // 阈值
-                face.style.opacity = isFacing ? 0.95 : 0.25;
-                face.style.filter = isFacing ? 'brightness(1.1)' : 'brightness(0.5)';
-            });
+            // Auxiliary functions and face updates are now moot without the HTML elements.
+            // For example, cubeFaces will be an empty NodeList.
         }
 
         // 独立的亮度更新函数，用于在transform更新时同步亮度
         function updateCubeBrightness(currentIdx, totalFrames) {
+            // This function is now effectively disabled as cube-wrapper and view-cube are removed from HTML
             const conf = BASE_VIEW_CONFIG[state.currentViewId];
             if (!conf) return;
 
             let rx = state.cubeRot.x; // 使用当前实际旋转值
             let ry = state.cubeRot.y;
 
-            // 辅助函数：绕 X 轴旋转向量
-            const rotX = (v, angle) => {
-                const rad = angle * Math.PI / 180;
-                const c = Math.cos(rad), s = Math.sin(rad);
-                return { x: v.x, y: v.y * c - v.z * s, z: v.y * s + v.z * c };
-            };
-            // 辅助函数：绕 Y 轴旋转向量
-            const rotY = (v, angle) => {
-                const rad = angle * Math.PI / 180;
-                const c = Math.cos(rad), s = Math.sin(rad);
-                return { x: v.x * c + v.z * s, y: v.y, z: -v.x * s + v.z * c };
-            };
-
-            cubeFaces.forEach(face => {
-                const type = face.getAttribute('data-face');
-
-                // 视图 1 和 2 的特殊规则
-                const isView1Or2 = (state.currentViewId === '1' || state.currentViewId === '1.1' ||
-                    state.currentViewId === '2' || state.currentViewId === '2.1');
-
-                if (isView1Or2 && (type === 'top' || type === 'bottom')) {
-                    if (type === 'top') {
-                        face.style.opacity = 0.95;
-                        face.style.filter = 'brightness(1.1)';
-                    } else {
-                        face.style.opacity = 0.25;
-                        face.style.filter = 'brightness(0.5)';
-                    }
-                    return;
-                }
-
-                let frx = 0, fry = 0;
-                if (type === 'back') fry = 180;
-                else if (type === 'right') fry = 90;
-                else if (type === 'left') fry = -90;
-                else if (type === 'top') frx = 90;
-                else if (type === 'bottom') frx = -90;
-
-                let v = { x: 0, y: 0, z: 1 };
-                v = rotX(v, frx);
-                v = rotY(v, fry);
-                v = rotX(v, rx);
-                v = rotY(v, ry);
-
-                const isFacing = v.z > 0.1;
-                face.style.opacity = isFacing ? 0.95 : 0.25;
-                face.style.filter = isFacing ? 'brightness(1.1)' : 'brightness(0.5)';
-            });
+            // Auxiliary functions and face updates are now moot without the HTML elements.
         }
 
         // ==========================================
@@ -1951,17 +2014,19 @@
             }
 
             // 2. 主视图画布 3D 倾斜 (Main Viewer Tilt)
-            const canvasTiltStrength = 5; // 如果需要更强烈的效果可调大，例如 10
-            const rotX = -y * canvasTiltStrength; // 鼠标下(y>0) -> 仰视(rotX<0) 或 俯视? 
-            // 按照卡片逻辑: 鼠标在下，卡片上边缘翘起(rotX>0)? 
-            // 用户参考代码: rotateX = ((y - centerY) / centerY) * sensitivity; (y大 -> rotX大)
-            // 让我们保持一致:
-            const cRotX = y * canvasTiltStrength;
-            const cRotY = -x * canvasTiltStrength;
+            const canvasTiltStrength = 5; // 降低到5，防止翻面
+            const maxTilt = 15; // 限制最大倾斜角度为15度
 
-            // 应用到画布
+            let cRotX = y * canvasTiltStrength;
+            let cRotY = -x * canvasTiltStrength;
+
+            // 限制角度，防止翻面
+            cRotX = Math.max(-maxTilt, Math.min(maxTilt, cRotX));
+            cRotY = Math.max(-maxTilt, Math.min(maxTilt, cRotY));
+
+            // 应用倾斜到主canvas
             if (canvas) {
-                canvas.style.transform = `rotateX(${cRotX}deg) rotateY(${cRotY}deg)`;
+                canvas.style.transform = `perspective(1000px) rotateX(${cRotX}deg) rotateY(${cRotY}deg)`;
             }
         });
 
@@ -2026,6 +2091,8 @@
 
         // 启动循环
         requestAnimationFrame(updateLogic);
+
+
 
     </script>
 </body>
