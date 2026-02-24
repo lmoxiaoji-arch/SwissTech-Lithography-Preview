@@ -1160,11 +1160,9 @@
                 if (cloudImg) GLOBAL_ASSETS.cloud = cloudImg;
                 if (overlayVid) {
                     GLOBAL_ASSETS.overlayVideo = overlayVid;
-                    // Overlay 循环播放，形成持续光效动画
-                    // 拖动时会暂停并用 seek 控制帧，松手后恢复播放
-                    overlayVid.loop = true;
-                    overlayVid.muted = true;
-                    overlayVid.play().catch(e => console.log('Overlay autoplay prevented', e));
+                    // 不自动播放，完全由拖动 seek 控制光刻效果帧
+                    overlayVid.loop = false;
+                    overlayVid.pause();
                 }
 
                 GLOBAL_ASSETS.loaded = true;
@@ -1605,11 +1603,6 @@
             state.isDragging = true;
             state.lastX = pt.clientX;
             state.lastY = pt.clientY;
-            // Composite 视图拖动时：暂停 overlay 自动播放，改用 seek 控制
-            if (state.isComposite && GLOBAL_ASSETS.overlayVideo) {
-                GLOBAL_ASSETS.overlayVideo.pause();
-                state.targetVideoTime = GLOBAL_ASSETS.overlayVideo.currentTime;
-            }
         }
 
         function onDrag(pt) {
@@ -1671,11 +1664,6 @@
 
         function endDrag() {
             if (state.isDragging) {
-                // Composite 视图松手：恢复 overlay 自动播放
-                if (state.isComposite && GLOBAL_ASSETS.overlayVideo) {
-                    state.targetVideoTime = undefined;
-                    GLOBAL_ASSETS.overlayVideo.play().catch(() => { });
-                }
                 if (state.dragLoops > 0 && state.frames.length > 0) {
                     state.isRebounding = true;
                     // 计算回弹目标（最近的整数帧，略微退）
