@@ -1666,7 +1666,11 @@
 
             state.lastX = pt.clientX;
             state.lastY = pt.clientY;
-            draw();
+            // 视频模式：不在 onDrag 里调 draw()，由 seeked 事件触发渲染
+            // 静态图模式：需要立刻重绘平移效果
+            if (state.viewType !== 'video') {
+                draw();
+            }
         }
 
         function endDrag() {
@@ -1881,7 +1885,7 @@
                 ctx.beginPath();
                 ctx.rect(dx, dy, dw, dh);
                 ctx.clip();
-                ctx.globalCompositeOperation = 'overlay';
+                ctx.globalCompositeOperation = 'screen'; // screen 比 overlay 计算量小，效果接近
                 ctx.drawImage(GLOBAL_ASSETS.overlayVideo, dx, dy, dw, dh);
                 ctx.restore();
             }
