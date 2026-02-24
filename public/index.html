@@ -1841,9 +1841,9 @@
                 const cdw = cl.naturalWidth * coverScale;
                 const cdh = cl.naturalHeight * coverScale;
                 const cdx = dx + (dw - cdw) / 2 + offsetCloud.x;
-                // 顶部距内容区 12mm（96dpi: 1mm ≈ 3.78px → 12mm ≈ 45px）
-                const cloudTopOffsetPx = 12 * 3.7795;
-                const cdy = dy + cloudTopOffsetPx + offsetCloud.y;
+                // 对准黄鹤楼小窗：中心在内容区高度约 35% 处（可调）
+                const cloudCenterYRatio = 0.35;
+                const cdy = dy + dh * cloudCenterYRatio - cdh / 2 + offsetCloud.y;
                 ctx.drawImage(cl, cdx, cdy, cdw, cdh);
                 ctx.restore();
             }
