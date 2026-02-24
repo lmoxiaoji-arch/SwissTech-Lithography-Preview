@@ -1651,12 +1651,11 @@
                 // Fix: newTime = current + delta
                 let newTime = state.targetVideoTime + timeDelta;
 
-                // 性能优化：将时间设置移交 updateLogic 处理，防止频繁设置导致卡顿
-                // 计算目标时间
-                // 循环播放逻辑 -> 移除，改为钳制 (Clamp)
-                // if (newTime < 0) { ... }
-
-                newTime = Math.max(0, Math.min(video.duration, newTime));
+                // 案模循环：超出范围自动绕回，支持无限拖动
+                if (video.duration) {
+                    newTime = newTime % video.duration;
+                    if (newTime < 0) newTime += video.duration;
+                }
 
                 // 仅更新目标时间，实际应用在 updateLogic 中进行
                 state.targetVideoTime = newTime;
@@ -1815,9 +1814,9 @@
             };
 
             // ==========================================
-            // layer 0: 底色填充 #e84124 —— 最底层，防止透底显黑
+            // layer 0: 底色填充 #e84124 —— 仅 composite 视图（正/背面），防透底
             // ==========================================
-            if (!isStaticView) {
+            if (state.isComposite && !isStaticView) {
                 ctx.save();
                 ctx.beginPath();
                 ctx.rect(dx, dy, dw, dh);
@@ -1828,9 +1827,9 @@
             }
 
             // ==========================================
-            // layer 1: 底层云膜 (cloud.png) —— 始终绘制，保持原比例 cover
+            // layer 1: 底层云膜 (cloud.png) —— 仅 composite 视图，始终绘制
             // ==========================================
-            if (GLOBAL_ASSETS.cloud && !isStaticView) {
+            if (state.isComposite && GLOBAL_ASSETS.cloud && !isStaticView) {
                 ctx.save();
                 ctx.beginPath();
                 ctx.rect(dx, dy, dw, dh);
@@ -2060,14 +2059,16 @@
             // 4. 视频 seek 逻辑 (Throttle)
             if (state.viewType === 'video' && state.video && state.targetVideoTime !== undefined) {
                 const video = state.video;
+                // targetVideoTime 取模：防止 loop 后 currentTime 归零但目标值未更新导致闪回
+                if (video.duration) {
+                    state.targetVideoTime = state.targetVideoTime % video.duration;
+                    if (state.targetVideoTime < 0) state.targetVideoTime += video.duration;
+                }
                 // 只有当 video 没有 seek 时才更新
                 if (!video.seeking) {
                     const diff = Math.abs(video.currentTime - state.targetVideoTime);
-                    // 阈值：如果差异太小就不更新，避免微颤
                     if (diff > 0.03) {
                         video.currentTime = state.targetVideoTime;
-                        // 无论 seek 是否立即完成，我们认为已经处理了当前目标
-                        // 注意：seeking 属性会在设置 currentTime 后变 true
                     }
                 }
             }
