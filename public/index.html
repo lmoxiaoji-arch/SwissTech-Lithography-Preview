@@ -396,11 +396,6 @@
                 height: 18px;
             }
 
-            /* ViewCube移动端位置优化 - 避免与按钮重叠 */
-            .cube-wrapper {
-                bottom: 140px !important;
-                right: 15px !important;
-            }
 
             .face {
                 width: 60px !important;
@@ -408,10 +403,10 @@
                 font-size: 24px !important;
             }
 
-            /* 浮动切换按钮位置调整 */
+            /* 浮动切换按钮：手机上控制栏换行后约160px高，按钮上移到190px */
             .floating-toggle {
-                bottom: 150px;
-                right: 20px;
+                bottom: 190px;
+                right: 16px;
                 width: 48px;
                 height: 48px;
             }
@@ -1880,9 +1875,9 @@
 
 
             // ==========================================
-            // layer 3: 顶层 Overlay (Overlay.mp4) —— 仅视频视图
+            // layer 3: 顶层 Overlay (Overlay.mp4) —— 仅复合视图 (v1 正/背面)
             // ==========================================
-            if (!isStaticView && GLOBAL_ASSETS.overlayVideo && GLOBAL_ASSETS.overlayVideo.readyState >= 2) {
+            if (state.isComposite && GLOBAL_ASSETS.overlayVideo && GLOBAL_ASSETS.overlayVideo.readyState >= 2) {
                 ctx.save();
                 ctx.beginPath();
                 ctx.rect(dx, dy, dw, dh);
