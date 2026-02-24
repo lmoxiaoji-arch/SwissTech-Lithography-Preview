@@ -1872,16 +1872,14 @@
                         ctx.restore();
                     }
                 } else {
-                    // 普通视频视图：readyState >= 2 即绘制（底色托底，seeking 旧帧不闪黑）
-                    if (mainTarget.readyState >= 2) {
-                        ctx.save();
-                        ctx.beginPath();
-                        ctx.rect(dx, dy, dw, dh);
-                        ctx.clip();
-                        ctx.globalCompositeOperation = 'source-over';
-                        ctx.drawImage(mainTarget, dx, dy, dw, dh);
-                        ctx.restore();
-                    }
+                    // 普通视频视图：直接绘制（seeking 时浏览器保留上一帧，底色兜底）
+                    ctx.save();
+                    ctx.beginPath();
+                    ctx.rect(dx, dy, dw, dh);
+                    ctx.clip();
+                    ctx.globalCompositeOperation = 'source-over';
+                    ctx.drawImage(mainTarget, dx, dy, dw, dh);
+                    ctx.restore();
                 }
 
             } else {
