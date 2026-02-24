@@ -1991,28 +1991,26 @@
             const x = (e.clientX / window.innerWidth - 0.5) * 2; // -1 to 1
             const y = (e.clientY / window.innerHeight - 0.5) * 2; // -1 to 1
 
-            // 更新视差状态
+            // 更新视差状态并刷新画布（云膜视差不需要拖动，鼠标移动即生效）
             state.parallax.x = x;
             state.parallax.y = y;
+            draw(); // 立即重绘让云膜跟随
 
-            // 1. 背景反向位移 (拖动时暂停背景移动以减少干扰，或者也保持? 用户只说了拖动时触发，并未明确指背景)
-            // 通常背景保持不动或动都可以，这里我们保持背景跟随(既然用户喜欢动)
+            // 1. 背景反向位移
             if (bg) {
                 bg.style.transform = `translate(${x * -bgSensitivity}px, ${y * -bgSensitivity}px)`;
             }
 
             // 2. 主视图画布 3D 倾斜 (Main Viewer Tilt)
-            const canvasTiltStrength = 5; // 降低到5，防止翻面
-            const maxTilt = 15; // 限制最大倾斜角度为15度
+            const canvasTiltStrength = 8;
+            const maxTilt = 30;
 
             let cRotX = y * canvasTiltStrength;
             let cRotY = -x * canvasTiltStrength;
 
-            // 限制角度，防止翻面
             cRotX = Math.max(-maxTilt, Math.min(maxTilt, cRotX));
             cRotY = Math.max(-maxTilt, Math.min(maxTilt, cRotY));
 
-            // 应用倾斜到主canvas
             if (canvas) {
                 canvas.style.transform = `perspective(1000px) rotateX(${cRotX}deg) rotateY(${cRotY}deg)`;
             }
