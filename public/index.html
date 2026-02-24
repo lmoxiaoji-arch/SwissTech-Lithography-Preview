@@ -1885,7 +1885,7 @@
                 ctx.beginPath();
                 ctx.rect(dx, dy, dw, dh);
                 ctx.clip();
-                ctx.globalCompositeOperation = 'screen'; // screen 比 overlay 计算量小，效果接近
+                ctx.globalCompositeOperation = 'overlay'; // 叠加混合模式
                 ctx.drawImage(GLOBAL_ASSETS.overlayVideo, dx, dy, dw, dh);
                 ctx.restore();
             }
