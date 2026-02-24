@@ -1824,9 +1824,9 @@
             };
 
             // ==========================================
-            // layer 0: 底色填充 #e84124 —— 所有视频视图兜底，防透底消失
+            // layer 0: 底色填充 #e84124 —— 仅 composite 视图（正/背面）
             // ==========================================
-            if (!isStaticView) {
+            if (state.isComposite && !isStaticView) {
                 ctx.save();
                 ctx.beginPath();
                 ctx.rect(dx, dy, dw, dh);
