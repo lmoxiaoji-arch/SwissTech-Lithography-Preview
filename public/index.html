@@ -1108,6 +1108,7 @@
                 video.muted = true;
                 video.preload = 'auto';
                 video.playsInline = true;
+                video.loop = true; // 视频默认循环，overlayVideo 在 loadGlobalAssets 里覆盖为 false
                 // 关键：设置 playsinline 和 crossOrigin
                 video.setAttribute('playsinline', '');
                 video.setAttribute('webkit-playsinline', '');
@@ -1827,19 +1828,21 @@
             }
 
             // ==========================================
-            // layer 1: 底层云膜 (cloud.png) —— 始终绘制，视差随鼠标实时更新
+            // layer 1: 底层云膜 (cloud.png) —— 始终绘制，保持原比例 cover
             // ==========================================
             if (GLOBAL_ASSETS.cloud && !isStaticView) {
                 ctx.save();
                 ctx.beginPath();
                 ctx.rect(dx, dy, dw, dh);
                 ctx.clip();
-                const cloudScale = 1.1;
-                const cdw = dw * cloudScale;
-                const cdh = dh * cloudScale;
+                const cl = GLOBAL_ASSETS.cloud;
+                // Cover 缩放：宽高比不变，用 1.1 倍放大防视差穿帮
+                const coverScale = Math.max(dw / cl.naturalWidth, dh / cl.naturalHeight) * 1.1;
+                const cdw = cl.naturalWidth * coverScale;
+                const cdh = cl.naturalHeight * coverScale;
                 const cdx = dx + (dw - cdw) / 2 + offsetCloud.x;
                 const cdy = dy + (dh - cdh) / 2 + offsetCloud.y;
-                ctx.drawImage(GLOBAL_ASSETS.cloud, cdx, cdy, cdw, cdh);
+                ctx.drawImage(cl, cdx, cdy, cdw, cdh);
                 ctx.restore();
             }
 
