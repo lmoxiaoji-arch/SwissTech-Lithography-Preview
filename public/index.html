@@ -1666,11 +1666,8 @@
 
             state.lastX = pt.clientX;
             state.lastY = pt.clientY;
-            // 视频模式：不在 onDrag 里调 draw()，由 seeked 事件触发渲染
-            // 静态图模式：需要立刻重绘平移效果
-            if (state.viewType !== 'video') {
-                draw();
-            }
+            // 始终调用 draw()：保证拖动时持续视觅反馈（即使是旧帧也比空热面强）
+            draw();
         }
 
         function endDrag() {
@@ -1846,8 +1843,8 @@
                         ctx.restore();
                     }
                 } else {
-                    // 普通视频视图：seeking 时跳过，保留云膜在底层提供视觉连续性
-                    if (mainTarget.readyState >= 2 && !isVideoSeeking) {
+                    // 普通视频视图：readyState >= 2 即绘制（seeking 时绘旧帧比空白流畅）
+                    if (mainTarget.readyState >= 2) {
                         ctx.save();
                         ctx.beginPath();
                         ctx.rect(dx, dy, dw, dh);
@@ -1868,9 +1865,9 @@
             }
 
             // ==========================================
-            // layer 3: 顶层 Overlay (Overlay.mp4) —— 仅 composite 视图，seeking 时跳过
+            // layer 3: 顶层 Overlay (Overlay.mp4) —— 仅 composite 视图
             // ==========================================
-            if (state.isComposite && !isVideoSeeking &&
+            if (state.isComposite &&
                 GLOBAL_ASSETS.overlayVideo && GLOBAL_ASSETS.overlayVideo.readyState >= 2) {
                 ctx.save();
                 ctx.beginPath();
