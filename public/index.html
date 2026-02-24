@@ -1513,11 +1513,13 @@
             const isLeavingStatic = state.currentViewId === 'static' || state.currentViewId === 'static_hdt';
 
             // 每个视图独立保存/恢复缩放和位置
+            // static 和 static_hdt 共享同一存储（效果图与灰度图同步）
             if (!state.savedViewStates) state.savedViewStates = {};
+            const getStateKey = (id) => (id === 'static_hdt' ? 'static' : id);
 
             // 保存离开视图的状态
             if (state.currentViewId) {
-                state.savedViewStates[state.currentViewId] = {
+                state.savedViewStates[getStateKey(state.currentViewId)] = {
                     zoom: state.zoom,
                     pan: { ...state.pan },
                     targetPan: { ...state.targetPan }
@@ -1527,7 +1529,7 @@
             state.currentViewId = viewId;
 
             // 恢复进入视图的状态（首次进入默认 0.8 居中）
-            const saved = state.savedViewStates[viewId];
+            const saved = state.savedViewStates[getStateKey(viewId)];
             if (saved) {
                 state.zoom = saved.zoom;
                 state.pan = { ...saved.pan };
