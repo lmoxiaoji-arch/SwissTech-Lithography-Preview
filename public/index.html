@@ -1147,16 +1147,19 @@
             // 硬编码加载 v1 的资源作为全局资源
             // 修正路径：移除 project_A 前缀，直接使用 v1
             const cloudPath = DEPLOY_CONFIG.buildPath('v1/cloud.png');
+            const underPath = DEPLOY_CONFIG.buildPath('v1/under.png');
             const overlayPath = DEPLOY_CONFIG.buildPath('v1/Overlay.mp4');
 
             try {
                 // 并行加载
-                const [cloudImg, overlayVid] = await Promise.all([
+                const [cloudImg, underImg, overlayVid] = await Promise.all([
                     loadImage(cloudPath).catch(e => { console.warn('Global cloud load failed', e); return null; }),
+                    loadImage(underPath).catch(e => { console.warn('Global under load failed', e); return null; }),
                     loadVideo(overlayPath).catch(e => { console.warn('Global overlay load failed', e); return null; })
                 ]);
 
                 if (cloudImg) GLOBAL_ASSETS.cloud = cloudImg;
+                if (underImg) GLOBAL_ASSETS.under = underImg;
                 if (overlayVid) {
                     GLOBAL_ASSETS.overlayVideo = overlayVid;
                     // Overlay 视频作为 composite 视图的 seek 目标（正/背视图拖动控制）
@@ -1814,6 +1817,23 @@
                 x: state.parallax.x * 12 * parallaxFactor,
                 y: state.parallax.y * 12 * parallaxFactor
             };
+
+            // ==========================================
+            // layer 0: 底层图 (under.png) —— 云膜之下，同等视差
+            // ==========================================
+            if (GLOBAL_ASSETS.under && !isStaticView) {
+                ctx.save();
+                ctx.beginPath();
+                ctx.rect(dx, dy, dw, dh);
+                ctx.clip();
+                const underScale = 1.1; // 放大防穿帮，与云膜一致
+                const udw = dw * underScale;
+                const udh = dh * underScale;
+                const udx = dx + (dw - udw) / 2 + offsetCloud.x;
+                const udy = dy + (dh - udh) / 2 + offsetCloud.y;
+                ctx.drawImage(GLOBAL_ASSETS.under, udx, udy, udw, udh);
+                ctx.restore();
+            }
 
             // ==========================================
             // layer 1: 底层云膜 (cloud.png) —— 始终绘制，视差随鼠标实时更新
