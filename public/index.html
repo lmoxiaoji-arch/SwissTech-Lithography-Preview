@@ -1159,11 +1159,10 @@
                 if (cloudImg) GLOBAL_ASSETS.cloud = cloudImg;
                 if (overlayVid) {
                     GLOBAL_ASSETS.overlayVideo = overlayVid;
-                    // Overlay 视频应该是循环播放的背景/前景
-                    overlayVid.loop = true;
-                    // 尝试静音播放以避免自动播放限制
-                    overlayVid.muted = true;
-                    overlayVid.play().catch(e => console.log('Overlay autoplay prevented', e));
+                    // Overlay 视频作为 composite 视图的 seek 目标（正/背视图拖动控制）
+                    // 不 play/loop，完全由拖动 seek 控制，避免 play 与 seek 争抢解码器造成卡顿
+                    overlayVid.loop = false;
+                    overlayVid.pause();
                 }
 
                 GLOBAL_ASSETS.loaded = true;
