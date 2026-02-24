@@ -1147,19 +1147,16 @@
             // 硬编码加载 v1 的资源作为全局资源
             // 修正路径：移除 project_A 前缀，直接使用 v1
             const cloudPath = DEPLOY_CONFIG.buildPath('v1/cloud.png');
-            const underPath = DEPLOY_CONFIG.buildPath('v1/under.png');
             const overlayPath = DEPLOY_CONFIG.buildPath('v1/Overlay.mp4');
 
             try {
                 // 并行加载
-                const [cloudImg, underImg, overlayVid] = await Promise.all([
+                const [cloudImg, overlayVid] = await Promise.all([
                     loadImage(cloudPath).catch(e => { console.warn('Global cloud load failed', e); return null; }),
-                    loadImage(underPath).catch(e => { console.warn('Global under load failed', e); return null; }),
                     loadVideo(overlayPath).catch(e => { console.warn('Global overlay load failed', e); return null; })
                 ]);
 
                 if (cloudImg) GLOBAL_ASSETS.cloud = cloudImg;
-                if (underImg) GLOBAL_ASSETS.under = underImg;
                 if (overlayVid) {
                     GLOBAL_ASSETS.overlayVideo = overlayVid;
                     // Overlay 视频作为 composite 视图的 seek 目标（正/背视图拖动控制）
@@ -1782,9 +1779,7 @@
         // ==========================================
         // 5. 绘制
         // ==========================================
-        // 帧缓冲：保存上一帧好的视频内容，seek 期间从缓冲取帧颂得不闪烁
-        let _videoFrameBuf = null; // 离屏 canvas
-        let _videoFrameBufCtx = null;
+        // 帧缓冲已移除：底色填充解决了黑帧问题，无需额外缓冲
 
         function draw() {
             let mainTarget = null;
@@ -1819,19 +1814,15 @@
             };
 
             // ==========================================
-            // layer 0: 底层图 (under.png) —— 云膜之下，同等视差
+            // layer 0: 底色填充 #e84124 —— 最底层，防止透底显黑
             // ==========================================
-            if (GLOBAL_ASSETS.under && !isStaticView) {
+            if (!isStaticView) {
                 ctx.save();
                 ctx.beginPath();
                 ctx.rect(dx, dy, dw, dh);
                 ctx.clip();
-                const underScale = 1.1; // 放大防穿帮，与云膜一致
-                const udw = dw * underScale;
-                const udh = dh * underScale;
-                const udx = dx + (dw - udw) / 2 + offsetCloud.x;
-                const udy = dy + (dh - udh) / 2 + offsetCloud.y;
-                ctx.drawImage(GLOBAL_ASSETS.under, udx, udy, udw, udh);
+                ctx.fillStyle = '#e84124';
+                ctx.fillRect(dx, dy, dw, dh);
                 ctx.restore();
             }
 
@@ -1867,33 +1858,14 @@
                         ctx.restore();
                     }
                 } else {
-                    // 非 composite 视图：帧缓冲解决黑屏闪烁
-                    if (mainTarget.readyState >= 2 && !isVideoSeeking) {
-                        // 正常帧：绘制并存入缓冲
+                    // 普通视频视图：readyState >= 2 即绘制（底色托底，seeking 旧帧不闪黑）
+                    if (mainTarget.readyState >= 2) {
                         ctx.save();
                         ctx.beginPath();
                         ctx.rect(dx, dy, dw, dh);
                         ctx.clip();
                         ctx.globalCompositeOperation = 'source-over';
                         ctx.drawImage(mainTarget, dx, dy, dw, dh);
-                        ctx.restore();
-                        // 存入帧缓冲（只存视频内容区域）
-                        const bw = Math.round(dw), bh = Math.round(dh);
-                        if (!_videoFrameBuf || _videoFrameBuf.width !== bw || _videoFrameBuf.height !== bh) {
-                            _videoFrameBuf = document.createElement('canvas');
-                            _videoFrameBuf.width = bw;
-                            _videoFrameBuf.height = bh;
-                            _videoFrameBufCtx = _videoFrameBuf.getContext('2d');
-                        }
-                        _videoFrameBufCtx.clearRect(0, 0, bw, bh);
-                        _videoFrameBufCtx.drawImage(mainTarget, 0, 0, bw, bh);
-                    } else if (isVideoSeeking && _videoFrameBuf) {
-                        // Seeking 中：从缓冲取上一帧，不产生黑帧
-                        ctx.save();
-                        ctx.beginPath();
-                        ctx.rect(dx, dy, dw, dh);
-                        ctx.clip();
-                        ctx.drawImage(_videoFrameBuf, dx, dy, dw, dh);
                         ctx.restore();
                     }
                 }
