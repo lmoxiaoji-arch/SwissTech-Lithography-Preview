@@ -1836,12 +1836,14 @@
                 ctx.rect(dx, dy, dw, dh);
                 ctx.clip();
                 const cl = GLOBAL_ASSETS.cloud;
-                // Cover 缩放：宽高比不变，用 1.1 倍放大防视差穿帮
-                const coverScale = Math.max(dw / cl.naturalWidth, dh / cl.naturalHeight) * 1.1;
+                // Cover × 2：保持宽高比放大2倍，超出部分被 clip
+                const coverScale = Math.max(dw / cl.naturalWidth, dh / cl.naturalHeight) * 2.0;
                 const cdw = cl.naturalWidth * coverScale;
                 const cdh = cl.naturalHeight * coverScale;
                 const cdx = dx + (dw - cdw) / 2 + offsetCloud.x;
-                const cdy = dy + (dh - cdh) / 2 + offsetCloud.y;
+                // 顶部距内容区 12mm（96dpi: 1mm ≈ 3.78px → 12mm ≈ 45px）
+                const cloudTopOffsetPx = 12 * 3.7795;
+                const cdy = dy + cloudTopOffsetPx + offsetCloud.y;
                 ctx.drawImage(cl, cdx, cdy, cdw, cdh);
                 ctx.restore();
             }
