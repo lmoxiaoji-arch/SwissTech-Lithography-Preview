@@ -1782,8 +1782,6 @@
         // ==========================================
         // 5. 绘制
         // ==========================================
-        // 5. 绘制
-        // ==========================================
         function draw() {
             let mainTarget = null;
             if (state.viewType === 'video') {
@@ -1791,32 +1789,25 @@
             } else if (state.viewType === 'static') {
                 mainTarget = state.image;
             }
-
             if (!mainTarget) return;
 
-            // 关键优化：视频 seeking 时跳过整帧（包括 clearRect）
-            // 避免"清空画布 → 等待解码完成 → 帧就绪"期间出现黑屏/白屏
-            if (state.viewType === 'video' && mainTarget.seeking) return;
-
-            // 背景 - 清除画布（仅在有帧数据可绘时才清空）
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-
-            // 获取 Top Layer (Mask/Overlay) 的尺寸 (作为基准)
             const cw = canvas.width, ch = canvas.height;
-            // Safety check: ensure mainTarget has dimensions
             const tw = mainTarget.videoWidth || mainTarget.width || 1;
             const th = mainTarget.videoHeight || mainTarget.height || 1;
-
             if (tw <= 0 || th <= 0) return;
+
+            const isVideoSeeking = state.viewType === 'video' && mainTarget.seeking;
+            const isStaticView = (state.currentViewId === 'static' || state.currentViewId === 'static_hdt');
+
+            // 始终清空并重绘（云膜/背景不受 seeking 影响，持续更新视差）
+            ctx.clearRect(0, 0, cw, ch);
 
             const scale = Math.min(cw / tw, ch / th) * state.zoom;
             const dw = tw * scale;
             const dh = th * scale;
             const dx = (cw - dw) / 2 + state.pan.x;
             const dy = (ch - dh) / 2 + state.pan.y;
-            // 视差参数 (MM -> Pixel Factor)
-            // Bottom Cloud: -12mm
+
             const parallaxFactor = 2;
             const offsetCloud = {
                 x: state.parallax.x * 12 * parallaxFactor,
@@ -1824,48 +1815,48 @@
             };
 
             // ==========================================
-            // layer 1: 底层云膜 (cloud.png) —— 仅视频视图
+            // layer 1: 底层云膜 (cloud.png) —— 始终绘制，视差随鼠标实时更新
             // ==========================================
-            const isStaticView = (state.currentViewId === 'static' || state.currentViewId === 'static_hdt');
             if (GLOBAL_ASSETS.cloud && !isStaticView) {
                 ctx.save();
                 ctx.beginPath();
                 ctx.rect(dx, dy, dw, dh);
                 ctx.clip();
-
                 const cloudScale = 1.1;
                 const cdw = dw * cloudScale;
                 const cdh = dh * cloudScale;
                 const cdx = dx + (dw - cdw) / 2 + offsetCloud.x;
                 const cdy = dy + (dh - cdh) / 2 + offsetCloud.y;
-
                 ctx.drawImage(GLOBAL_ASSETS.cloud, cdx, cdy, cdw, cdh);
                 ctx.restore();
             }
 
             // ==========================================
-            // layer 2: 中层 (Image OR Video)
+            // layer 2: 中层内容
             // ==========================================
             if (state.viewType === 'video') {
-                // readyState >= 2: 有当前帧数据可绘制
-                // seeking 时跳过绘制，保留画布上一帧，防止黑屏
-                if (mainTarget.readyState >= 2 && !mainTarget.seeking) {
-                    ctx.save();
-                    ctx.beginPath();
-                    ctx.rect(dx, dy, dw, dh);
-                    ctx.clip();
-
-                    if (state.isComposite) {
-                        if (state.secondaryImage) {
-                            ctx.drawImage(state.secondaryImage, dx, dy, dw, dh);
-                        }
-                    } else {
+                if (state.isComposite) {
+                    // Composite 视图：底层 PNG 始终绘制（不依赖 video seeking 状态）
+                    if (state.secondaryImage) {
+                        ctx.save();
+                        ctx.beginPath();
+                        ctx.rect(dx, dy, dw, dh);
+                        ctx.clip();
+                        ctx.drawImage(state.secondaryImage, dx, dy, dw, dh);
+                        ctx.restore();
+                    }
+                } else {
+                    // 普通视频视图：seeking 时跳过，保留云膜在底层提供视觉连续性
+                    if (mainTarget.readyState >= 2 && !isVideoSeeking) {
+                        ctx.save();
+                        ctx.beginPath();
+                        ctx.rect(dx, dy, dw, dh);
+                        ctx.clip();
                         ctx.globalCompositeOperation = 'source-over';
                         ctx.drawImage(mainTarget, dx, dy, dw, dh);
+                        ctx.restore();
                     }
-                    ctx.restore();
                 }
-                // readyState < 2 或 seeking 中：不清空画布内容，保留上一帧，无黑屏
             } else {
                 // 静态图
                 ctx.save();
@@ -1876,21 +1867,19 @@
                 ctx.restore();
             }
 
-
             // ==========================================
-            // layer 3: 顶层 Overlay (Overlay.mp4) —— 仅复合视图 (v1 正/背面)
+            // layer 3: 顶层 Overlay (Overlay.mp4) —— 仅 composite 视图，seeking 时跳过
             // ==========================================
-            if (state.isComposite && GLOBAL_ASSETS.overlayVideo && GLOBAL_ASSETS.overlayVideo.readyState >= 2) {
+            if (state.isComposite && !isVideoSeeking &&
+                GLOBAL_ASSETS.overlayVideo && GLOBAL_ASSETS.overlayVideo.readyState >= 2) {
                 ctx.save();
                 ctx.beginPath();
                 ctx.rect(dx, dy, dw, dh);
                 ctx.clip();
-                ctx.globalCompositeOperation = 'overlay'; // 叠加混合模式
+                ctx.globalCompositeOperation = 'overlay';
                 ctx.drawImage(GLOBAL_ASSETS.overlayVideo, dx, dy, dw, dh);
                 ctx.restore();
             }
-
-            // 视图立方体已移除
         }
 
         function positionCube(imgX, imgY, imgW, imgH) {
