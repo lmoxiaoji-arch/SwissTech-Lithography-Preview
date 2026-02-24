@@ -1893,11 +1893,9 @@
             }
 
             // ==========================================
-            // layer 3: 顶层 Overlay (Overlay.mp4) —— 仅 composite 视图，seek 期间跳过
+            // layer 3: 顶层 Overlay (Overlay.mp4) —— 仅 composite 视图，始终绘制
             // ==========================================
-            // seeking 时跳过：底层 PNG 始终可见，不需要 overlay 也能保持画面清晰
-            if (state.isComposite && !isVideoSeeking &&
-                GLOBAL_ASSETS.overlayVideo && GLOBAL_ASSETS.overlayVideo.readyState >= 2) {
+            if (state.isComposite && GLOBAL_ASSETS.overlayVideo) {
                 ctx.save();
                 ctx.beginPath();
                 ctx.rect(dx, dy, dw, dh);
