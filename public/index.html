@@ -1512,39 +1512,30 @@
             const isEnteringStatic = (viewId === 'static' || viewId === 'static_hdt');
             const isLeavingStatic = state.currentViewId === 'static' || state.currentViewId === 'static_hdt';
 
+            // 每个视图独立保存/恢复缩放和位置
+            if (!state.savedViewStates) state.savedViewStates = {};
+
             // 保存离开视图的状态
             if (state.currentViewId) {
-                if (isLeavingStatic) {
-                    state.savedZoomStatic = state.zoom;
-                    state.savedPanStatic = { ...state.pan };
-                    state.savedTargetPanStatic = { ...state.targetPan };
-                } else {
-                    state.savedZoomSequence = state.zoom;
-                    state.savedPanSequence = { ...state.pan };
-                    state.savedTargetPanSequence = { ...state.targetPan };
-                }
+                state.savedViewStates[state.currentViewId] = {
+                    zoom: state.zoom,
+                    pan: { ...state.pan },
+                    targetPan: { ...state.targetPan }
+                };
             }
 
             state.currentViewId = viewId;
 
-            // 恢复进入视图的状态
-            // 静态视图在 static ↔ static_hdt 之间切换时保持位移（长按预览效果）
-            // 首次从视频视图进入静态视图时重置到默认
-            const isSwitchingWithinStatic = isEnteringStatic && isLeavingStatic;
-            if (isEnteringStatic) {
-                if (isSwitchingWithinStatic) {
-                    // static ↔ static_hdt 内部切换：保持当前位移，不重置
-                    // (平移/缩放不变，用户视角不跳动)
-                } else {
-                    // 从视频视图切进来：重置到默认居中
-                    state.zoom = 0.8;
-                    state.pan = { x: 0, y: 0 };
-                    state.targetPan = { x: 0, y: 0 };
-                }
+            // 恢复进入视图的状态（首次进入默认 0.8 居中）
+            const saved = state.savedViewStates[viewId];
+            if (saved) {
+                state.zoom = saved.zoom;
+                state.pan = { ...saved.pan };
+                state.targetPan = { ...saved.targetPan };
             } else {
-                state.zoom = state.savedZoomSequence;
-                state.pan = { ...state.savedPanSequence };
-                state.targetPan = { ...state.savedTargetPanSequence };
+                state.zoom = 0.8;
+                state.pan = { x: 0, y: 0 };
+                state.targetPan = { x: 0, y: 0 };
             }
             state.targetZoom = state.zoom;
 
