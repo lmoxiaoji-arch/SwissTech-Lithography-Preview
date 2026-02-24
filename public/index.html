@@ -389,16 +389,6 @@
                 min-width: 120px;
             }
 
-            /* 版本按钮：第二行，固定宽度 */
-            .version-btn {
-                width: 40px;
-                height: 40px;
-            }
-
-            .version-btn svg {
-                width: 22px;
-                height: 22px;
-            }
 
             /* 折叠按钮调整 */
             .sidebar-collapse-btn {
@@ -431,12 +421,7 @@
                 height: 24px;
             }
 
-            /* 版本弹窗移动端优化 */
-            .version-popup {
-                right: -10px;
-                /* 稍微向左偏移，避免超出屏幕 */
-                width: 130px;
-            }
+
         }
 
         /* 超窄屏幕优化 (≤360px) */
@@ -461,10 +446,6 @@
                 min-width: 100px;
             }
 
-            .version-btn {
-                width: 36px;
-                height: 36px;
-            }
         }
 
 
@@ -556,104 +537,6 @@
             box-shadow: 0 0 15px rgba(51, 255, 51, 0.3);
         }
 
-        /* --- 版本历史弹出窗口 (替换旧的切换视觉效果) --- */
-        .version-btn {
-            position: relative;
-            width: 44px;
-            /* 增加尺寸 */
-            height: 44px;
-            padding: 0;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 50%;
-            /* 圆形 */
-            z-index: 300;
-            /* 确保版本按钮及其弹窗高于浮动按钮 */
-        }
-
-        .version-btn svg {
-            width: 26px;
-            height: 26px;
-            fill: currentColor;
-        }
-
-        .version-popup {
-            position: absolute;
-            bottom: 150%;
-            /* 在按钮上方 */
-            right: 0;
-            /* 与按钮右对齐 */
-            width: 140px;
-            background: rgba(30, 30, 40, 0.95);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 12px;
-            backdrop-filter: blur(20px);
-            padding: 6px;
-            display: flex;
-            flex-direction: column;
-            gap: 4px;
-            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.4);
-            z-index: 400;
-            /* 确保在所有其他元素之上，包括浮动按钮（z-index: 150）和ViewCube */
-
-            opacity: 0;
-            transform: translateY(10px) scale(0.95);
-            pointer-events: none;
-            transition: all 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
-            max-height: 0;
-            overflow: hidden;
-        }
-
-        .version-popup.show {
-            opacity: 1;
-            transform: translateY(0) scale(1);
-            pointer-events: auto;
-            max-height: 200px;
-            /* 限制高度 */
-        }
-
-        .version-list {
-            max-height: 150px;
-            overflow-y: auto;
-            display: flex;
-            flex-direction: column;
-            gap: 2px;
-        }
-
-        /* 自定义滚动条 */
-        .version-list::-webkit-scrollbar {
-            width: 4px;
-        }
-
-        .version-list::-webkit-scrollbar-track {
-            background: transparent;
-        }
-
-        .version-list::-webkit-scrollbar-thumb {
-            background: rgba(255, 255, 255, 0.2);
-            border-radius: 2px;
-        }
-
-        .v-item {
-            padding: 8px 12px;
-            border-radius: 8px;
-            font-size: 13px;
-            color: rgba(255, 255, 255, 0.7);
-            cursor: pointer;
-            transition: background 0.1s;
-        }
-
-        .v-item:hover {
-            background: rgba(255, 255, 255, 0.1);
-            color: #fff;
-        }
-
-        .v-item.active {
-            background: rgba(255, 255, 255, 0.2);
-            color: #fff;
-            font-weight: bold;
-        }
 
         /* --- 新的悬浮切换按钮 (主视图 <-> 子视图) --- */
         .floating-toggle {
@@ -869,22 +752,6 @@
                 <div class="btn-content">整体平面图</div>
             </button>
 
-            <!-- 版本按钮 -->
-            <button class="btn version-btn" id="btn-version">
-                <div class="btn-bg"></div>
-                <div class="btn-content">
-                    <!-- History Icon: Material Design History -->
-                    <!-- History Icon: Material Design History (Restored) -->
-                    <svg viewBox="0 0 24 24">
-                        <path
-                            d="M13 3a9 9 0 0 0-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42A8.954 8.954 0 0 0 13 21a9 9 0 0 0 0-18zm-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8H12z" />
-                    </svg>
-                </div>
-                <!-- 版本弹窗 -->
-                <div class="version-popup" id="version-popup">
-                    <div class="version-list" id="version-list"></div>
-                </div>
-            </button>
         </div>
     </div>
 
@@ -981,16 +848,36 @@
 
         const BASE_VIEW_CONFIG = {
             '1': {
+                // Modified for Layered Architecture: V1 uses PNG as middle layer
+                type: 'static', subView: '1.1', name: '正视图', btnId: 'btn-view-1',
+                // fallback/default file. For v1 it will vary based on version check or just be static?
+                // logic: if v1, load png. if other, load mp4.
+                // easiest way: let's keep it 'video' type but allow image override in load logic?
+                // actually, cleanest is to handle based on file extension in config?
+                // or dynamic config update based on version?
+                // Let's use a specific property "layerImage" vs "layerVideo".
+                // But simplifying:
+                // For v1, we want to load 'effect_overview_front.png'.
+                // For v2+, 'effect_overview_front.mp4'.
+                // Since this config is global, we can't hardcode just one.
+                // SOLUTION: Use a base name and let loader decide extension, OR
+                // Update config dynamically in detectVersions?
+                // Or just specify both and let loader pick based on version availability?
+                // Let's rely on standard logic but with a twist:
+                // We will default to video (.mp4) for 1, 1.1, 2, 2.1...
+                // BUT for v1 specifically, we want image.
+                // Let's modify the config locally if version is v1?
+                // Or better: The config defines the "view slot".
+                // I will add a flag `preferImageInV1: true`.
                 type: 'video', subView: '1.1', name: '正视图', btnId: 'btn-view-1',
                 videoFile: 'effect_overview_front.mp4',
+                imageFileV1: 'effect_overview_front.png', // Special for V1
                 baseRotY: 0, baseRotX: -15
             },
-            '1.1': { // 假设背视图不存在，或者后续补充。暂时保留条目但如果没有文件会回退或报错
-                // 如果没有背视图视频，可以根据需求禁用。由于截图没有背视图，这里暂时注释掉或指向正视图备用
-                // 用户提到 v1 里面直接是光效整体... 没看到背视图。
-                // 但为了逻辑完整，如果用户后续添加 'effect_overview_back.mp4' 可以用。
+            '1.1': {
                 type: 'video', mainView: '1', name: '背视图', btnId: 'btn-view-1',
-                videoFile: 'effect_overview_back.mp4', // 猜测文件名
+                videoFile: 'effect_overview_back.mp4',
+                imageFileV1: 'effect_overview_back.png', // Special for V1
                 baseRotY: 180, baseRotX: -15
             },
             '2': {
@@ -1029,10 +916,15 @@
         const IMAGE_CACHE = {};
         const IS_EMPTY = {};
         const IS_SINGLE_FILE = {}; // 如果视图（即使是序列类型）只有 1 帧，则进行跟踪
+        // 全局资产缓存
+        const GLOBAL_ASSETS = {
+            cloud: null,
+            overlayVideo: null,
+            loaded: false
+        };
 
         const state = {
-            currentVersion: 'a', // 默认
-            availableVersions: [], // ['a', 'a1', 'a2']
+            currentVersion: 'v1', // 固定版本
             currentViewId: null,
             frames: [],
             currentFrame: 0,
@@ -1051,8 +943,6 @@
             lastX: 0, lastY: 0, lastPinch: 0,
             preventClick: false,
             sidebarCollapsed: false,
-            versionPopupOpen: false,
-            isTempSwitch: false,
             parallax: { x: 0, y: 0 },
 
             // 循环拖动相关
@@ -1076,9 +966,6 @@
         // UI 元素
         const sidebarCollapseBtn = document.getElementById('sidebar-collapse');
         //const controlsContainer = document.querySelector('.controls-container');
-        const btnVersion = document.getElementById('btn-version');
-        const versionPopup = document.getElementById('version-popup');
-        const versionList = document.getElementById('version-list');
         const floatToggle = document.getElementById('float-toggle');
 
         // ==========================================
@@ -1089,74 +976,8 @@
             window.addEventListener('resize', resize);
             bindEvents();
 
-            await detectVersions();
-            renderVersionList();
-
-            // 加载初始版本
             await loadVersion(state.currentVersion);
         });
-
-        async function detectVersions() {
-            // 动态版本检测（支持本地和云服务器部署）
-            const candidates = ['v1', 'v2', 'v3', 'v4', 'v5'];
-            const found = [];
-
-            const checkFile = (url) => {
-                return fetch(url, { method: 'HEAD' })
-                    .then(res => res.ok)
-                    .catch(() => false);
-            };
-
-            for (const ver of candidates) {
-                // 使用动态路径: v1/effect_overview_front.mp4
-                const path1 = encodeURI(DEPLOY_CONFIG.buildPath(`${ver}/effect_overview_front.mp4`));
-
-                if (await checkFile(path1)) {
-                    found.push(ver);
-                }
-            }
-
-            // Fallback
-            state.availableVersions = found.length > 0 ? found : ['v1'];
-            state.currentVersion = state.availableVersions[0];
-
-            console.log('Detected versions:', state.availableVersions);
-        }
-
-        function renderVersionList() {
-            versionList.innerHTML = '';
-            state.availableVersions.forEach(ver => {
-                const item = document.createElement('div');
-                item.className = 'v-item';
-                // 显示名称映射
-                item.innerText = ver;
-                if (ver === state.currentVersion) item.classList.add('active');
-
-                item.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    if (ver !== state.currentVersion) {
-                        switchVersion(ver);
-                    }
-                    toggleVersionPopup(false);
-                });
-                versionList.appendChild(item);
-            });
-        }
-
-        async function switchVersion(ver) {
-            loader.style.display = 'flex';
-            loader.style.opacity = 1;
-            if (loaderNum) loaderNum.innerText = '0%';
-
-            state.currentVersion = ver;
-            renderVersionList();
-
-            for (let k in IMAGE_CACHE) delete IMAGE_CACHE[k];
-            for (let k in IS_EMPTY) delete IS_EMPTY[k];
-            for (let k in IS_SINGLE_FILE) delete IS_SINGLE_FILE[k];
-
-            await loadVersion(ver);
-        }
 
         async function loadVersion(ver) {
             // 懒加载优化：只加载第一个视图，其他按需加载
@@ -1203,6 +1024,11 @@
 
         // 单个视图加载函数（懒加载）
         async function preloadSingleView(ver, viewId) {
+            // 确保全局资产已加载 (只尝试一次)
+            if (!GLOBAL_ASSETS.loaded) {
+                await loadGlobalAssets();
+            }
+
             const config = BASE_VIEW_CONFIG[viewId];
             if (!config) return false;
 
@@ -1218,9 +1044,29 @@
                 const p = DEPLOY_CONFIG.buildPath(`${ver}/${folderName}/${fileName}`);
                 tasks.push({ type: 'static', id: viewId, src: encodeURI(p) });
             } else if (config.type === 'video') {
-                // 视频类型
-                const p = DEPLOY_CONFIG.buildPath(`${ver}/${config.videoFile}`);
-                tasks.push({ type: 'video', id: viewId, src: encodeURI(p) });
+                // 视频类型逻辑更新：支持 v1 使用 png
+                let useImage = false;
+                let file = config.videoFile;
+
+                // 特殊处理 v1 (且配置了 imageFileV1)
+                if (ver === 'v1' && config.imageFileV1) {
+                    useImage = true;
+                    file = config.imageFileV1;
+                }
+
+                const p = DEPLOY_CONFIG.buildPath(`${ver}/${file}`);
+                // 如果是 V1 且使用了替代图片 (Composite Mode)
+                if (useImage) {
+                    // 我们加载图片，但也需要视频 (Overlay)。
+                    // 这是一个复合视图: 
+                    // 1. Image (Middle) -> from file
+                    // 2. Video (Top) -> from GLOBAL_ASSETS.overlayVideo
+                    // 3. Cloud (Bottom) -> from GLOBAL_ASSETS.cloud
+                    // 我们将它标记为 'composite' 类型，或者在 IMAGE_CACHE 中存储特殊结构
+                    tasks.push({ type: 'composite', id: viewId, src: encodeURI(p) });
+                } else {
+                    tasks.push({ type: 'video', id: viewId, src: encodeURI(p) });
+                }
             }
 
             // 之前的序列帧逻辑已废弃，不再处理
@@ -1228,13 +1074,24 @@
             const promises = tasks.map(task => {
                 if (task.type === 'video') {
                     return loadVideo(task.src).then(video => {
-                        if (video) {
-                            IMAGE_CACHE[viewId] = { type: 'video', element: video };
-                        }
+                        if (video) IMAGE_CACHE[viewId] = { type: 'video', element: video };
                     }).catch(e => console.warn(e));
-                } else {
+                } else if (task.type === 'static') {
                     return loadImage(task.src).then(img => {
                         IMAGE_CACHE[viewId] = { type: 'static', element: img };
+                    }).catch(e => console.warn(e));
+                } else if (task.type === 'composite') {
+                    // 复合类型加载: 加载图片作为 Image，同时引用全局 Video
+                    return loadImage(task.src).then(img => {
+                        // 引用全局 Overlay 视频作为此视图的 "Video" 元素 (用于 scrubbing)
+                        // 注意: 这意味着所有 Composite 视图共享同一个 Video 实例 (state.video)
+                        // 这符合 "Overlay作为叠加的上层... 拖动控制进度条" 的需求
+                        IMAGE_CACHE[viewId] = {
+                            type: 'video', // 保持 type='video' 以复用 scrubbing 逻辑
+                            isComposite: true, // 标记为复合
+                            element: GLOBAL_ASSETS.overlayVideo, // Video 实际上是 Overlay
+                            imageElement: img // 额外的图片层
+                        };
                     }).catch(e => console.warn(e));
                 }
             });
@@ -1287,6 +1144,39 @@
                 video.src = src;
                 video.load();
             });
+        }
+
+        async function loadGlobalAssets() {
+            if (GLOBAL_ASSETS.loaded) return;
+
+            // 硬编码加载 v1 的资源作为全局资源
+            // 修正路径：移除 project_A 前缀，直接使用 v1
+            const cloudPath = DEPLOY_CONFIG.buildPath('v1/cloud.png');
+            const overlayPath = DEPLOY_CONFIG.buildPath('v1/Overlay.mp4');
+
+            try {
+                // 并行加载
+                const [cloudImg, overlayVid] = await Promise.all([
+                    loadImage(cloudPath).catch(e => { console.warn('Global cloud load failed', e); return null; }),
+                    loadVideo(overlayPath).catch(e => { console.warn('Global overlay load failed', e); return null; })
+                ]);
+
+                if (cloudImg) GLOBAL_ASSETS.cloud = cloudImg;
+                if (overlayVid) {
+                    GLOBAL_ASSETS.overlayVideo = overlayVid;
+                    // Overlay 视频应该是循环播放的背景/前景
+                    overlayVid.loop = true;
+                    // 尝试静音播放以避免自动播放限制
+                    overlayVid.muted = true;
+                    overlayVid.play().catch(e => console.log('Overlay autoplay prevented', e));
+                }
+
+                GLOBAL_ASSETS.loaded = true;
+            } catch (e) {
+                console.error('Global assets loading error:', e);
+                // 即使失败也标记为 loaded 以避免无限重试
+                GLOBAL_ASSETS.loaded = true;
+            }
         }
 
         // 全量加载函数（废弃，保留兼容）
@@ -1500,47 +1390,63 @@
             document.getElementById('btn-view-3').addEventListener('click', () => handleMainViewClick('3'));
             document.getElementById('btn-view-static').addEventListener('click', () => handleMainViewClick('static'));
 
-            // 版本弹出窗口切换
-            btnVersion.addEventListener('click', (e) => {
-                e.stopPropagation();
-                toggleVersionPopup(!state.versionPopupOpen);
-            });
 
-            // 点击外部关闭弹出窗口
-            window.addEventListener('click', () => {
-                if (state.versionPopupOpen) toggleVersionPopup(false);
-            });
+            // 浮动切换按钮：双模式
+            // - 视频视图（前三组）：click 点击永久切换到子视图
+            // - 静态视图（整体平面图）：长按预览另一模式，松开自动还原
 
-            // 悬浮切换 (主视图 <-> 子视图)
-            // 逻辑：所有视图都使用点击切换
-
-            // 点击处理程序 (适用于所有视图)
-            floatToggle.addEventListener('click', async (e) => {
-                const conf = BASE_VIEW_CONFIG[state.currentViewId];
-                if (!conf) return;
-
-                const target = conf.subView || conf.mainView;
-                if (!target) return;
-
-                // 智能懒加载:检查缓存,如果未加载则先加载
+            // 执行懒加载并切换到目标视图的通用函数
+            async function doToggleSwitch(target) {
                 if (!IMAGE_CACHE[target] || IMAGE_CACHE[target].length === 0) {
-                    console.log(`懒加载toggle目标视图: ${target}`);
                     const success = await preloadSingleView(state.currentVersion, target);
-
-                    // 关键: 加载完成后更新按钮状态
                     updateFloatingToggle();
-
-                    if (!success && IS_EMPTY[target]) {
-                        console.warn(`toggle目标视图加载失败,已禁用按钮: ${target}`);
-                        return;
-                    }
+                    if (!success && IS_EMPTY[target]) return false;
                 }
-
-                // 确保目标视图不为空后再切换
                 if (!IS_EMPTY[target]) {
                     switchView(target);
+                    return true;
+                }
+                return false;
+            }
+
+            // 视频视图：点击切换
+            floatToggle.addEventListener('click', async (e) => {
+                const isStaticView = (state.currentViewId === 'static' || state.currentViewId === 'static_hdt');
+                if (isStaticView) return; // 静态视图由长按逻辑处理
+
+                const conf = BASE_VIEW_CONFIG[state.currentViewId];
+                if (!conf) return;
+                const target = conf.subView || conf.mainView;
+                if (!target) return;
+                await doToggleSwitch(target);
+            });
+
+            // 静态视图：长按预览，松开还原
+            let staticPressOrigin = null; // 记录长按前的视图 id
+
+            floatToggle.addEventListener('pointerdown', async (e) => {
+                const isStaticView = (state.currentViewId === 'static' || state.currentViewId === 'static_hdt');
+                if (!isStaticView) return;
+
+                e.preventDefault();
+                const origin = state.currentViewId;
+                const target = origin === 'static' ? 'static_hdt' : 'static';
+                const switched = await doToggleSwitch(target);
+                if (switched) {
+                    staticPressOrigin = origin; // 记录原始视图，松开时还原
                 }
             });
+
+            function handleStaticRelease() {
+                if (staticPressOrigin !== null) {
+                    switchView(staticPressOrigin);
+                    staticPressOrigin = null;
+                }
+            }
+
+            floatToggle.addEventListener('pointerup', handleStaticRelease);
+            floatToggle.addEventListener('pointerleave', handleStaticRelease);
+
 
             // 画布逻辑
             canvas.addEventListener('mousedown', startDrag);
@@ -1566,12 +1472,6 @@
                 const delta = -Math.sign(e.deltaY) * 0.15;
                 state.targetZoom = Math.max(GLOBAL_CONFIG.MIN_ZOOM, Math.min(GLOBAL_CONFIG.MAX_ZOOM, state.targetZoom + delta));
             }, { passive: false });
-        }
-
-        function toggleVersionPopup(show) {
-            state.versionPopupOpen = show;
-            if (show) versionPopup.classList.add('show');
-            else versionPopup.classList.remove('show');
         }
 
         async function handleMainViewClick(mainViewId) {
@@ -1613,29 +1513,42 @@
             const config = BASE_VIEW_CONFIG[viewId];
             if (!config) return;
 
-            // 保存旧的缩放和平移
-            // ... (Simple save logic, respecting current view type)
+            const isEnteringStatic = (viewId === 'static' || viewId === 'static_hdt');
+            const isLeavingStatic = state.currentViewId === 'static' || state.currentViewId === 'static_hdt';
+
+            // 保存离开视图的状态
             if (state.currentViewId) {
-                const oldType = BASE_VIEW_CONFIG[state.currentViewId]?.type;
-                if (oldType === 'video') {
-                    state.savedZoomSequence = state.zoom;
-                    // Video usually doesn't have pan unless we add it, but saving it doesn't hurt
-                    state.savedPanSequence = { ...state.pan };
-                } else {
+                if (isLeavingStatic) {
                     state.savedZoomStatic = state.zoom;
                     state.savedPanStatic = { ...state.pan };
+                    state.savedTargetPanStatic = { ...state.targetPan };
+                } else {
+                    state.savedZoomSequence = state.zoom;
+                    state.savedPanSequence = { ...state.pan };
+                    state.savedTargetPanSequence = { ...state.targetPan };
                 }
             }
 
             state.currentViewId = viewId;
 
-            // 恢复新的缩放和平移
-            if (config.type === 'video') {
+            // 恢复进入视图的状态
+            // 静态视图在 static ↔ static_hdt 之间切换时保持位移（长按预览效果）
+            // 首次从视频视图进入静态视图时重置到默认
+            const isSwitchingWithinStatic = isEnteringStatic && isLeavingStatic;
+            if (isEnteringStatic) {
+                if (isSwitchingWithinStatic) {
+                    // static ↔ static_hdt 内部切换：保持当前位移，不重置
+                    // (平移/缩放不变，用户视角不跳动)
+                } else {
+                    // 从视频视图切进来：重置到默认居中
+                    state.zoom = 0.8;
+                    state.pan = { x: 0, y: 0 };
+                    state.targetPan = { x: 0, y: 0 };
+                }
+            } else {
                 state.zoom = state.savedZoomSequence;
                 state.pan = { ...state.savedPanSequence };
-            } else {
-                state.zoom = state.savedZoomStatic;
-                state.pan = { ...state.savedPanStatic };
+                state.targetPan = { ...state.savedTargetPanSequence };
             }
             state.targetZoom = state.zoom;
 
@@ -1644,17 +1557,24 @@
             state.viewType = cache ? cache.type : 'none';
             if (state.viewType === 'video') {
                 state.video = cache.element;
-                state.currentFrame = 0;
-                // 初始化目标时间，确保拖动从当前时间开始
-                // 用户需求：默认在中间帧
-                if (state.video.duration) {
+                state.isComposite = cache.isComposite || false; // 同步 flag
+                state.secondaryImage = cache.imageElement || null; // 同步图片
+
+                // 初始化目标时间
+                // 安全检查：state.video 可能为 null (如果 Global Overlay 加载失败)
+                if (state.video && state.video.duration) {
                     state.video.currentTime = state.video.duration / 2;
                     state.targetVideoTime = state.video.duration / 2;
+                    // 关键修复: 暂停视频以防止 scrubbing 时的闪烁 (fighting between play and seek)
+                    // 用户希望 "拖动控制进度条"，这意味着完全的手动控制
+                    state.video.pause();
                 } else {
                     state.targetVideoTime = 0;
                 }
             } else if (state.viewType === 'static') {
                 state.image = cache.element;
+                state.isComposite = false;
+                state.secondaryImage = null;
             }
 
             // 更新 UI 激活状态
@@ -1677,19 +1597,13 @@
             if (state.currentViewId === 'static') targetId = IS_EMPTY['static_hdt'] ? null : 'static_hdt';
             if (state.currentViewId === 'static_hdt') targetId = IS_EMPTY['static'] ? null : 'static';
 
-            // 关键修复: 区分"未加载"(undefined)和"已确认为空"(true)
-            // - undefined: 视图还未尝试加载,应该启用按钮允许懒加载
-            // - true: 视图已尝试加载但确认为空,应该禁用按钮
-            // - false: 视图已成功加载,应该启用按钮
             const isEmpty = targetId ? (IS_EMPTY[targetId] === true) : true;
 
-            // 用户请求切换在每个历史页面上都存在。
+            // 同步 float-toggle 状态
             if (!targetId) {
                 floatToggle.classList.add('hidden');
             } else {
                 floatToggle.classList.remove('hidden');
-
-                // 新逻辑:只有明确标记为空时才禁用,未加载(undefined)时保持启用以支持懒加载
                 if (isEmpty) {
                     floatToggle.classList.add('disabled');
                 } else {
@@ -1870,38 +1784,115 @@
         // ==========================================
         // 5. 绘制
         // ==========================================
+        // 5. 绘制
+        // ==========================================
         function draw() {
-            // 背景 - 清除画布以显示下方的 CSS 背景
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-            let drawTarget = null;
+            let mainTarget = null;
             if (state.viewType === 'video') {
-                drawTarget = state.video;
+                mainTarget = state.video;
             } else if (state.viewType === 'static') {
-                drawTarget = state.image;
+                mainTarget = state.image;
             }
 
-            if (!drawTarget) return;
+            if (!mainTarget) return;
 
-            // 绘制图像/视频
+            // 关键优化：视频 seeking 时跳过整帧（包括 clearRect）
+            // 避免"清空画布 → 等待解码完成 → 帧就绪"期间出现黑屏/白屏
+            if (state.viewType === 'video' && mainTarget.seeking) return;
+
+            // 背景 - 清除画布（仅在有帧数据可绘时才清空）
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+
+            // 获取 Top Layer (Mask/Overlay) 的尺寸 (作为基准)
             const cw = canvas.width, ch = canvas.height;
+            // Safety check: ensure mainTarget has dimensions
+            const tw = mainTarget.videoWidth || mainTarget.width || 1;
+            const th = mainTarget.videoHeight || mainTarget.height || 1;
 
-            // 获取尺寸
-            const tw = drawTarget.videoWidth || drawTarget.width || 0;
-            const th = drawTarget.videoHeight || drawTarget.height || 0;
-
-            if (tw === 0 || th === 0) return;
+            if (tw <= 0 || th <= 0) return;
 
             const scale = Math.min(cw / tw, ch / th) * state.zoom;
-
             const dw = tw * scale;
             const dh = th * scale;
             const dx = (cw - dw) / 2 + state.pan.x;
             const dy = (ch - dh) / 2 + state.pan.y;
+            // 视差参数 (MM -> Pixel Factor)
+            // Bottom Cloud: -12mm
+            const parallaxFactor = 2;
+            const offsetCloud = {
+                x: state.parallax.x * 12 * parallaxFactor,
+                y: state.parallax.y * 12 * parallaxFactor
+            };
 
-            ctx.drawImage(drawTarget, dx, dy, dw, dh);
+            // ==========================================
+            // layer 1: 底层云膜 (cloud.png) —— 仅视频视图
+            // ==========================================
+            const isStaticView = (state.currentViewId === 'static' || state.currentViewId === 'static_hdt');
+            if (GLOBAL_ASSETS.cloud && !isStaticView) {
+                ctx.save();
+                ctx.beginPath();
+                ctx.rect(dx, dy, dw, dh);
+                ctx.clip();
 
-            // 视图立方体 (ViewCube) - 用户要求移除，此处不再绘制
+                const cloudScale = 1.1;
+                const cdw = dw * cloudScale;
+                const cdh = dh * cloudScale;
+                const cdx = dx + (dw - cdw) / 2 + offsetCloud.x;
+                const cdy = dy + (dh - cdh) / 2 + offsetCloud.y;
+
+                ctx.drawImage(GLOBAL_ASSETS.cloud, cdx, cdy, cdw, cdh);
+                ctx.restore();
+            }
+
+            // ==========================================
+            // layer 2: 中层 (Image OR Video)
+            // ==========================================
+            if (state.viewType === 'video') {
+                // readyState >= 2: 有当前帧数据可绘制
+                // seeking 时跳过绘制，保留画布上一帧，防止黑屏
+                if (mainTarget.readyState >= 2 && !mainTarget.seeking) {
+                    ctx.save();
+                    ctx.beginPath();
+                    ctx.rect(dx, dy, dw, dh);
+                    ctx.clip();
+
+                    if (state.isComposite) {
+                        if (state.secondaryImage) {
+                            ctx.drawImage(state.secondaryImage, dx, dy, dw, dh);
+                        }
+                    } else {
+                        ctx.globalCompositeOperation = 'source-over';
+                        ctx.drawImage(mainTarget, dx, dy, dw, dh);
+                    }
+                    ctx.restore();
+                }
+                // readyState < 2 或 seeking 中：不清空画布内容，保留上一帧，无黑屏
+            } else {
+                // 静态图
+                ctx.save();
+                ctx.beginPath();
+                ctx.rect(dx, dy, dw, dh);
+                ctx.clip();
+                ctx.drawImage(mainTarget, dx, dy, dw, dh);
+                ctx.restore();
+            }
+
+
+            // ==========================================
+            // layer 3: 顶层 Overlay (Overlay.mp4) —— 仅视频视图
+            // ==========================================
+            if (!isStaticView && GLOBAL_ASSETS.overlayVideo && GLOBAL_ASSETS.overlayVideo.readyState >= 2) {
+                ctx.save();
+                ctx.beginPath();
+                ctx.rect(dx, dy, dw, dh);
+                ctx.clip();
+                ctx.globalCompositeOperation = 'overlay';
+                ctx.drawImage(GLOBAL_ASSETS.overlayVideo, dx, dy, dw, dh);
+                ctx.restore();
+            }
+
+            // 视图立方体已移除
         }
 
         function positionCube(imgX, imgY, imgW, imgH) {
@@ -1996,6 +1987,10 @@
             const x = (e.clientX / window.innerWidth - 0.5) * 2; // -1 to 1
             const y = (e.clientY / window.innerHeight - 0.5) * 2; // -1 to 1
 
+            // 更新视差状态
+            state.parallax.x = x;
+            state.parallax.y = y;
+
             // 1. 背景反向位移 (拖动时暂停背景移动以减少干扰，或者也保持? 用户只说了拖动时触发，并未明确指背景)
             // 通常背景保持不动或动都可以，这里我们保持背景跟随(既然用户喜欢动)
             if (bg) {
@@ -2063,7 +2058,7 @@
                 if (!video.seeking) {
                     const diff = Math.abs(video.currentTime - state.targetVideoTime);
                     // 阈值：如果差异太小就不更新，避免微颤
-                    if (diff > 0.05) {
+                    if (diff > 0.03) {
                         video.currentTime = state.targetVideoTime;
                         // 无论 seek 是否立即完成，我们认为已经处理了当前目标
                         // 注意：seeking 属性会在设置 currentTime 后变 true
