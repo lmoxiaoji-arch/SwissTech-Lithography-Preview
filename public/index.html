@@ -782,11 +782,8 @@
 
             // 获取资源基础路径
             getBasePath() {
-                if (this.AUTO_DETECT) {
-                    // 自动检测：本地环境使用 project_A，云服务器留空
-                    return this.isLocal() ? 'project_A' : '';
-                }
-                return this.ASSET_BASE_PATH;
+                // 无论本地还是云端，资源目前都存放在 project_A 文件夹下
+                return 'project_A';
             },
 
             // 构建完整路径
