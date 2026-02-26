@@ -809,7 +809,7 @@
         // ==========================================
         const GLOBAL_CONFIG = {
             SENSITIVITY: 0.235,  // 降低灵敏度,拖动距离增加1.7倍
-            MIN_ZOOM: 0.2,
+            MIN_ZOOM: 0.8,       // 最小缩放变为 80%
             MAX_ZOOM: 1.2,
             // 序列帧配置
             SCAN_START: 0,        // 起始编号（序列_00000.png）
@@ -928,6 +928,7 @@
         const state = {
             currentVersion: 'v1', // 固定版本
             currentViewId: null,
+            globalVideoTime: null, // 跨视图视频时间同步
             frames: [],
             currentFrame: 0,
             zoom: 0.8,
@@ -1544,6 +1545,11 @@
                     pan: { ...state.pan },
                     targetPan: { ...state.targetPan }
                 };
+
+                // 关键补充：如果是离开视频视图，保存当前的视频时间
+                if (state.viewType === 'video' && state.video && state.video.duration) {
+                    state.globalVideoTime = state.video.currentTime;
+                }
             }
 
             state.currentViewId = viewId;
@@ -1569,11 +1575,19 @@
                 state.isComposite = cache.isComposite || false; // 同步 flag
                 state.secondaryImage = cache.imageElement || null; // 同步图片
 
-                // 初始化目标时间
+                // 初始化目标时间 (继承自全局状态或默认居中)
                 // 安全检查：state.video 可能为 null (如果 Global Overlay 加载失败)
                 if (state.video && state.video.duration) {
-                    state.video.currentTime = state.video.duration / 2;
-                    state.targetVideoTime = state.video.duration / 2;
+                    let initialTime = state.video.duration / 2;
+
+                    if (state.globalVideoTime !== null) {
+                        // 确保全局时间不超过当前视频的最大时长（万一视频长度稍微有差异）
+                        initialTime = Math.min(state.globalVideoTime, state.video.duration);
+                    }
+
+                    state.video.currentTime = initialTime;
+                    state.targetVideoTime = initialTime;
+
                     // 关键修复: 暂停视频以防止 scrubbing 时的闪烁 (fighting between play and seek)
                     // 用户希望 "拖动控制进度条"，这意味着完全的手动控制
                     state.video.pause();
