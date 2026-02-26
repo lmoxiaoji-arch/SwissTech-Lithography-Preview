@@ -1,0 +1,695 @@
+﻿    <style>
+        :root {
+            --bg-color: #0a0a0f;
+            --text-color: #ffffff;
+            --color-red: #ff3333;
+            --color-blue: #3388ff;
+            --color-green: #33ff33;
+        }
+
+        html,
+        body {
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            overflow: hidden;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            touch-action: none;
+            -webkit-user-select: none;
+            /* Chrome/Safari/Opera 浏览器 */
+            -moz-user-select: none;
+            /* Firefox 浏览器 */
+            -ms-user-select: none;
+            /* IE/Edge 浏览器 */
+            user-select: none;
+            /* 标准语法 */
+            perspective: 1000px;
+            /* 3D 透视 */
+        }
+
+        /* 交互式背景与场景 */
+        #interactive-bg {
+            position: fixed;
+            top: -10%;
+            left: -10%;
+            width: 120%;
+            height: 120%;
+            background: linear-gradient(135deg, #0a0e1a 0%, #1a1e2e 50%, #0a0e1a 100%), linear-gradient(45deg, cyan 5%, transparent 5%), linear-gradient(45deg, transparent 95%, cyan 95%);
+            background-position: 0 0, 0 0, 25px 25px;
+            background-size: 50px 50px, 50px 50px, 100% 100%;
+            background-attachment: fixed;
+            /* 固定背景，避免小屏幕滚动时出现黑色 */
+            /* 扩大到120%防止拖动边缘露出黑色 */
+            /* 网格纹理 + 深空渐变 */
+            z-index: -1;
+            transition: transform 0.1s ease-out;
+            pointer-events: none;
+        }
+
+        /* 确保画布和立方体可交互 */
+        /* 确保画布和立方体可交互 */
+        #viewer-canvas {
+            pointer-events: auto;
+            /* 画布3D倾斜过渡 */
+            transition: transform 0.1s ease-out;
+            transform-style: preserve-3d;
+        }
+
+        .cube-wrapper {
+            pointer-events: auto;
+        }
+
+        img {
+            -webkit-user-drag: none;
+            pointer-events: none;
+            /* 同时防止右键菜单以确保安全，如果这就是“完全不可交互”对图片的意思 */
+        }
+
+        /* =========================================
+           加载器样式
+           ========================================= */
+        #loader-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: #000;
+            z-index: 2000;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+            transform: translateZ(200px);
+            overflow: hidden;
+        }
+
+        .loader-visual {
+            position: relative;
+            width: 160px;
+            height: 160px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .aurora-ring {
+            position: absolute;
+            inset: 0;
+            border-radius: 50%;
+            border: 2px solid transparent;
+            border-top-color: #00f7ff;
+            border-left-color: #0066ff;
+            filter: drop-shadow(0 0 10px #00f7ff);
+            animation: spin 1.5s linear infinite;
+        }
+
+        .aurora-ring-inner {
+            position: absolute;
+            inset: 15px;
+            border-radius: 50%;
+            border: 2px solid transparent;
+            border-bottom-color: #00f7ff;
+            border-right-color: #0066ff;
+            filter: drop-shadow(0 0 15px #0066ff);
+            opacity: 0.8;
+            animation: spin-rev 2.5s linear infinite;
+        }
+
+        .particles span {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            background: #fff;
+            border-radius: 50%;
+            opacity: 0;
+            box-shadow: 0 0 5px #00f7ff;
+            animation: particle-flash 2s ease-in-out infinite;
+        }
+
+        .particles span:nth-child(1) {
+            top: 30%;
+            left: 40%;
+            animation-delay: 0s;
+        }
+
+        .particles span:nth-child(2) {
+            top: 60%;
+            left: 70%;
+            animation-delay: 0.5s;
+            width: 3px;
+            height: 3px;
+        }
+
+        .particles span:nth-child(3) {
+            top: 70%;
+            left: 30%;
+            animation-delay: 1.0s;
+            width: 2px;
+            height: 2px;
+        }
+
+        .particles span:nth-child(4) {
+            top: 20%;
+            left: 60%;
+            animation-delay: 1.5s;
+        }
+
+        .loader-num {
+            position: relative;
+            z-index: 2;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 24px;
+            font-weight: bold;
+            letter-spacing: 1px;
+            color: #fff;
+            text-shadow: 0 0 10px rgba(0, 247, 255, 0.5);
+        }
+
+        .loader-text {
+            font-size: 14px;
+            color: rgba(255, 255, 255, 0.6);
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        @keyframes spin-rev {
+            0% {
+                transform: rotate(360deg);
+            }
+
+            100% {
+                transform: rotate(0deg);
+            }
+        }
+
+        @keyframes particle-flash {
+
+            0%,
+            100% {
+                opacity: 0;
+                transform: scale(0.5);
+            }
+
+            50% {
+                opacity: 0.8;
+                transform: scale(1.2);
+            }
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                opacity: 0.5;
+            }
+
+            50% {
+                opacity: 0.9;
+            }
+        }
+
+        /* =========================================
+           UI 与控件
+           ========================================= */
+        #viewer-canvas {
+            position: fixed;
+            top: -25%;
+            left: -25%;
+            width: 150%;
+            height: 150%;
+            display: block;
+            pointer-events: auto;
+            transition: transform 0.1s ease-out;
+            transform-style: preserve-3d;
+            z-index: 10;
+        }
+
+        .logo {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            z-index: 900;
+            width: 120px;
+            pointer-events: none;
+        }
+
+        /* --- 主控制容器 (底部) --- */
+        .controls-container {
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            z-index: 200;
+            /* 提高到200，确保版本弹窗可以显示在浮动按钮（z-index: 150）之上 */
+            transition: transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
+        }
+
+        /* 无缝集成：按钮位于面板顶部 */
+        .sidebar-collapse-btn {
+            width: 80px;
+            height: 24px;
+            background: rgba(20, 20, 30, 0.95);
+            /* 覆盖自身的底部边框以与面板合并 */
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-bottom: none;
+            border-radius: 16px 16px 0 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            backdrop-filter: blur(15px);
+            z-index: 2;
+            /* 在面板之上 */
+            position: relative;
+            margin-bottom: -1px;
+            /* 重叠面板边框 */
+            /* 重叠面板边框 */
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+            /* 改为悬浮样式 */
+            background: rgba(20, 20, 30, 0.6);
+            backdrop-filter: blur(5px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            width: 60px;
+            height: 20px;
+            margin-top: 5px;
+            /* 与主面板分离 */
+            /* 移除原来的负边距和圆角逻辑 */
+        }
+
+        /* 通过创建一个伪元素来覆盖接缝，完全隐藏细微的线条 */
+        /* 移除遮挡伪元素，使按钮悬浮独立 */
+        .sidebar-collapse-btn::after {
+            display: none;
+        }
+
+        .sidebar-collapse-btn svg {
+            width: 18px;
+            height: 18px;
+            fill: rgba(255, 255, 255, 0.6);
+            transition: transform 0.4s ease;
+        }
+
+        /* 折叠状态：向下移动，仅保留按钮可见 */
+        .sidebar-collapsed .controls-container {
+            /* 向下平移控件的高度 (大约 80px) */
+            /* 我们平移 100% 减去按钮的可见高度，逻辑在 JS 或简化 CSS 中处理 */
+            transform: translateX(-50%) translateY(calc(100% - 24px));
+        }
+
+        .sidebar-collapsed .sidebar-collapse-btn svg {
+            transform: rotate(180deg);
+        }
+
+        .controls {
+            position: relative;
+            display: flex;
+            gap: 20px;
+            /* 增加间距以展示3D效果 */
+            background: rgba(20, 20, 30, 0.85);
+            /* 恢复胶囊背景，但稍微透明一点 */
+            padding: 20px 30px;
+            /* 为了安全起见增加额外的底部填充 */
+            /* 为了安全起见增加额外的底部填充 */
+            border-radius: 24px;
+            /* 全圆角 */
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(15px);
+            /* 恢复毛玻璃 */
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
+            /* 恢复阴影 */
+            perspective: 1000px;
+            /* 保持3D透视 */
+            align-items: center;
+            justify-content: center;
+            z-index: 1;
+            align-items: center;
+            justify-content: center;
+            z-index: 1;
+            min-width: 320px;
+            max-width: 90vw;
+            /* 确保在窄屏上不溢出 */
+        }
+
+        /* =========================================
+           移动端响应式优化
+           ========================================= */
+
+        /* 平板和小屏设备 (≤600px) */
+        @media (max-width: 600px) {
+            .controls {
+                min-width: auto;
+                width: 95vw;
+                padding: 15px 12px;
+                gap: 8px;
+                flex-wrap: wrap;
+                /* 关键：允许按钮换行 */
+                justify-content: center;
+            }
+
+            .btn {
+                padding: 10px 14px;
+                font-size: 13px;
+                flex: 0 0 auto;
+            }
+
+            /* 主视图按钮：第一行，每个占约1/3宽度 */
+            #btn-view-1,
+            #btn-view-2,
+            #btn-view-3 {
+                width: calc(33.333% - 6px);
+                min-width: 90px;
+            }
+
+            /* 静态图按钮：第二行，占据大部分空间 */
+            #btn-view-static {
+                flex: 1 1 auto;
+                min-width: 120px;
+            }
+
+
+            /* 折叠按钮调整 */
+            .sidebar-collapse-btn {
+                width: 50px;
+                height: 18px;
+            }
+
+
+            .face {
+                width: 60px !important;
+                height: 60px !important;
+                font-size: 24px !important;
+            }
+
+            /* 浮动切换按钮：手机上控制栏换行后约160px高，按钮上移到190px */
+            .floating-toggle {
+                bottom: 190px;
+                right: 16px;
+                width: 48px;
+                height: 48px;
+            }
+
+            .floating-toggle svg {
+                width: 24px;
+                height: 24px;
+            }
+
+
+        }
+
+        /* 超窄屏幕优化 (≤360px) */
+        @media (max-width: 360px) {
+            .controls {
+                gap: 6px;
+                padding: 12px 8px;
+            }
+
+            .btn {
+                padding: 8px 10px;
+                font-size: 12px;
+            }
+
+            #btn-view-1,
+            #btn-view-2,
+            #btn-view-3 {
+                min-width: 80px;
+            }
+
+            #btn-view-static {
+                min-width: 100px;
+            }
+
+        }
+
+
+
+        .btn {
+            position: relative;
+            background: rgba(255, 255, 255, 0.05);
+            /* 默认半透明背景 */
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: rgba(255, 255, 255, 0.9);
+            padding: 12px 24px;
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            white-space: nowrap;
+
+            /* 3D 卡片核心属性 */
+            transform-style: preserve-3d;
+            transition: transform 0.1s ease-out, box-shadow 0.2s ease;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+            /* Softer shadow */
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            /* Fainter border */
+            overflow: visible;
+            /* 必须可见，否则弹窗被切掉 */
+        }
+
+        .btn-content {
+            position: relative;
+            z-index: 2;
+            /* 移除translateZ以确保居中 */
+            pointer-events: none;
+            /* 让鼠标事件穿透到btn */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+        }
+
+        .btn-bg {
+            position: absolute;
+            /* 关键：扩大背景层，避免视差移动时露出空隙 */
+            top: -20px;
+            left: -20px;
+            right: -20px;
+            bottom: -20px;
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0));
+            z-index: 1;
+            /* border-radius 由父级 overflow: hidden 裁剪 */
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .btn:hover .btn-bg {
+            opacity: 0;
+            /* 禁用悬停色底效果 */
+        }
+
+        .btn:hover {
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.5);
+            /* 悬浮时阴影加深 */
+        }
+
+        .btn:active {
+            transform: scale(0.96);
+        }
+
+        .btn.active {
+            background: rgba(255, 255, 255, 0.25);
+            color: #fff;
+            border-color: rgba(255, 255, 255, 0.5);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+            font-weight: 600;
+        }
+
+        .btn-red.active {
+            border-color: var(--color-red);
+            box-shadow: 0 0 15px rgba(255, 51, 51, 0.3);
+        }
+
+        .btn-blue.active {
+            border-color: var(--color-blue);
+            box-shadow: 0 0 15px rgba(51, 136, 255, 0.3);
+        }
+
+        .btn-green.active {
+            border-color: var(--color-green);
+            box-shadow: 0 0 15px rgba(51, 255, 51, 0.3);
+        }
+
+
+        /* --- 新的悬浮切换按钮 (主视图 <-> 子视图) --- */
+        .floating-toggle {
+            position: fixed;
+            /* 改为fixed确保相对视口定位 */
+            bottom: 130px;
+            /* 往上移动避免与底部按钮重叠 */
+            right: 30px;
+            width: 56px;
+            height: 56px;
+            background: rgba(255, 255, 255, 0.1);
+            /* 玻璃质感 */
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 28px;
+            backdrop-filter: blur(10px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+            /* 有弹性的 */
+            z-index: 250;
+            /* 提高到250确保不被遮挡 */
+        }
+
+        .floating-toggle:hover {
+            transform: scale(1.1);
+            background: rgba(255, 255, 255, 0.2);
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
+        }
+
+        .floating-toggle:active {
+            transform: scale(0.95);
+        }
+
+        .floating-toggle svg {
+            width: 28px;
+            height: 28px;
+            fill: #fff;
+            filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+        }
+
+        .floating-toggle.hidden {
+            display: none;
+        }
+
+        /* --- 隐藏ViewCube（用户不需要） --- */
+        .cube-wrapper {
+            display: none !important;
+        }
+
+        .floating-toggle.disabled {
+            background: rgba(128, 128, 128, 0.2);
+            opacity: 0.5;
+            cursor: not-allowed;
+            pointer-events: auto;
+            /* 允许悬停以查看已禁用，但我们在 JS 中阻止点击？或者如果我们想要完全静默，只需 pointer-events: none */
+        }
+
+        /* 如果需要，使禁用的按钮真正不可交互，或者只是视觉上的 */
+        .floating-toggle.disabled {
+            pointer-events: none;
+            filter: grayscale(100%);
+        }
+
+        /* =========================================
+           ViewCube 3D
+           ========================================= */
+        /* =========================================
+           ViewCube 3D
+           ========================================= */
+        .cube-wrapper {
+            position: absolute;
+            perspective: 600px;
+            z-index: 90;
+            pointer-events: none;
+            transition: none;
+            /* 按要求即时隐藏/显示 */
+        }
+
+        .cube-wrapper.hidden {
+            display: none;
+            /* 强制隐藏 */
+        }
+
+        .cube {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            transform-style: preserve-3d;
+            /* 初始旋转将由 JS 设置 */
+            transition: transform 0.1s linear;
+        }
+
+        .face {
+            position: absolute;
+            width: 78px;
+            height: 78px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            font-size: 28px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Segoe UI', sans-serif;
+            backface-visibility: visible;
+            /* 如果我们需要即时反馈，则无需不透明度/亮度的过渡 */
+            backdrop-filter: blur(4px);
+            box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.2);
+        }
+
+        /* 颜色 (红/蓝/绿 主题) */
+        .face.front,
+        .face.back {
+            background: linear-gradient(135deg, rgba(255, 50, 50, 0.1), rgba(255, 50, 50, 0.4));
+            border-color: rgba(255, 80, 80, 0.6);
+            color: #fff;
+            text-shadow: 0 0 8px rgba(255, 0, 0, 0.8);
+        }
+
+        .face.left,
+        .face.right {
+            background: linear-gradient(135deg, rgba(50, 150, 255, 0.1), rgba(50, 150, 255, 0.4));
+            border-color: rgba(80, 180, 255, 0.6);
+            color: #fff;
+            text-shadow: 0 0 8px rgba(0, 100, 255, 0.8);
+        }
+
+        .face.top,
+        .face.bottom {
+            background: linear-gradient(135deg, rgba(50, 255, 50, 0.1), rgba(50, 255, 50, 0.4));
+            border-color: rgba(80, 255, 80, 0.6);
+            color: #fff;
+            text-shadow: 0 0 8px rgba(0, 255, 0, 0.8);
+        }
+
+        .face.front {
+            transform: rotateY(0deg) translateZ(40px);
+        }
+
+        .face.back {
+            transform: rotateY(180deg) translateZ(40px);
+        }
+
+        .face.right {
+            transform: rotateY(90deg) translateZ(40px);
+        }
+
+        .face.left {
+            transform: rotateY(-90deg) translateZ(40px);
+        }
+
+        .face.top {
+            transform: rotateX(90deg) translateZ(40px);
+        }
+
+        .face.bottom {
+            transform: rotateX(-90deg) translateZ(40px);
+        }
+    </style>
+</head>
+
+<body>
+

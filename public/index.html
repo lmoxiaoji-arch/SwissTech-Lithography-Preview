@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="zh-CN">
 
 <head>
@@ -70,10 +70,6 @@
 
         img {
             -webkit-user-drag: none;
-            -khtml-user-drag: none;
-            -moz-user-drag: none;
-            -o-user-drag: none;
-            user-drag: none;
             pointer-events: none;
             /* 同时防止右键菜单以确保安全，如果这就是“完全不可交互”对图片的意思 */
         }
@@ -928,7 +924,6 @@
         const state = {
             currentVersion: 'v1', // 固定版本
             currentViewId: null,
-            globalVideoTime: null, // 跨视图视频时间同步
             frames: [],
             currentFrame: 0,
             zoom: 0.8,
@@ -1540,16 +1535,14 @@
 
             // 保存离开视图的状态
             if (state.currentViewId) {
+                const isVideo = state.viewType === 'video' && state.video && state.video.duration;
                 state.savedViewStates[getStateKey(state.currentViewId)] = {
                     zoom: state.zoom,
                     pan: { ...state.pan },
-                    targetPan: { ...state.targetPan }
+                    targetPan: { ...state.targetPan },
+                    videoTime: isVideo ? state.video.currentTime : null,
+                    targetVideoTime: isVideo ? state.targetVideoTime : null
                 };
-
-                // 关键补充：如果是离开视频视图，保存当前的视频时间
-                if (state.viewType === 'video' && state.video && state.video.duration) {
-                    state.globalVideoTime = state.video.currentTime;
-                }
             }
 
             state.currentViewId = viewId;
@@ -1578,15 +1571,18 @@
                 // 初始化目标时间 (继承自全局状态或默认居中)
                 // 安全检查：state.video 可能为 null (如果 Global Overlay 加载失败)
                 if (state.video && state.video.duration) {
-                    let initialTime = state.video.duration / 2;
-
-                    if (state.globalVideoTime !== null) {
-                        // 确保全局时间不超过当前视频的最大时长（万一视频长度稍微有差异）
-                        initialTime = Math.min(state.globalVideoTime, state.video.duration);
+                    let initialTime = 0;
+                    if (saved && saved.videoTime !== undefined && saved.videoTime !== null) {
+                        // 如果有保存的独立时间，优先使用它
+                        initialTime = saved.videoTime;
+                        state.targetVideoTime = saved.targetVideoTime !== null ? saved.targetVideoTime : initialTime;
+                    } else {
+                        // 否则使用默认的一半时间
+                        initialTime = state.video.duration / 2;
+                        state.targetVideoTime = initialTime;
                     }
 
                     state.video.currentTime = initialTime;
-                    state.targetVideoTime = initialTime;
 
                     // 关键修复: 暂停视频以防止 scrubbing 时的闪烁 (fighting between play and seek)
                     // 用户希望 "拖动控制进度条"，这意味着完全的手动控制
