@@ -1142,8 +1142,8 @@
                 // 关键：当视频跳转完成（seeked）时，触发重绘
                 // 这确保了拖动时画布能显示最新的视频帧
                 video.addEventListener('seeked', () => {
-                    // 仅当此视频是当前视频时重绘
-                    if (state.video === video) {
+                    // 只要当前视图类型是 video 且状态里的 target 没变就算，放宽条件以支持非 GlobalOverlay
+                    if (state.viewType === 'video') {
                         draw();
                     }
                 });
@@ -1457,12 +1457,14 @@
             floatToggle.addEventListener('pointerleave', handleStaticRelease);
 
 
-            // 画布逻辑
+            // 画布逻辑 - 将事件绑定到 window 级别或者全屏遮罩上，防止被 UI 元素(比如 .cube-wrapper 留存的无形区块)遮挡
+            // 为了安全，依然绑定在 canvas 上，但确保 canvas 的 z-index 没问题
             canvas.addEventListener('mousedown', startDrag);
             window.addEventListener('mousemove', onDrag);
             window.addEventListener('mouseup', endDrag);
 
             canvas.addEventListener('touchstart', e => {
+                // 原来阻止行为可能导致一些点击失效，但在 canvas 上拖动是需要的
                 if (e.touches.length === 1) startDrag(e.touches[0]);
                 else if (e.touches.length === 2) startPinch(e);
             }, { passive: false });
@@ -1919,6 +1921,46 @@
                 ctx.drawImage(GLOBAL_ASSETS.overlayVideo, dx, dy, dw, dh);
                 ctx.restore();
             }
+
+            // ==========================================
+            // layer 4: 动态光影层 (跟随视差的全局明暗)
+            // ==========================================
+            drawLightingLayer(dx, dy, dw, dh);
+        }
+
+        function drawLightingLayer(dx, dy, dw, dh) {
+            if (!state.parallax) return;
+
+            ctx.save();
+            ctx.beginPath();
+            ctx.rect(dx, dy, dw, dh);
+            ctx.clip();
+
+            // 柔和漫反射：减小移动幅度，让光晕的变化看起来更像整个环境光的缓慢流转，而不是射灯的平移
+            const lightOffsetX = state.parallax.x * dw * 0.25;
+            const lightOffsetY = state.parallax.y * dh * 0.25;
+
+            const lightX = dx + dw / 2 + lightOffsetX;
+            const lightY = dy + dh * 0.4 + lightOffsetY;
+
+            // 漫反射核心：保持光晕半径巨大，让光线衰减平缓，但增强透明度
+            const radius = Math.max(dw, dh) * 1.2;
+
+            const gradient = ctx.createRadialGradient(lightX, lightY, 0, lightX, lightY, radius);
+
+            // 0% 位置：高光区（白光，提亮程度显著增强）
+            gradient.addColorStop(0, 'rgba(255, 255, 255, 0.45)');
+            // 50% 位置：过度到完全透明 (变宽)
+            gradient.addColorStop(0.5, 'rgba(0, 0, 0, 0)');
+            // 100% 位置：边缘暗流环境遮蔽（大幅加深黑边）
+            gradient.addColorStop(1, 'rgba(0, 0, 0, 0.7)');
+
+            // overlay 模式对明暗的增强比 soft-light 更明显，非常适合做3D高光
+            ctx.globalCompositeOperation = 'overlay';
+            ctx.fillStyle = gradient;
+            ctx.fillRect(dx, dy, dw, dh);
+
+            ctx.restore();
         }
 
         function positionCube(imgX, imgY, imgW, imgH) {
@@ -2078,15 +2120,17 @@
             // 4. 视频 seek 逻辑 (Throttle)
             if (state.viewType === 'video' && state.video && state.targetVideoTime !== undefined) {
                 const video = state.video;
+                if (!video.duration) return; // 确保 duration 存在
+
                 // targetVideoTime 取模：防止 loop 后 currentTime 归零但目标值未更新导致闪回
-                if (video.duration) {
-                    state.targetVideoTime = state.targetVideoTime % video.duration;
-                    if (state.targetVideoTime < 0) state.targetVideoTime += video.duration;
-                }
+                state.targetVideoTime = state.targetVideoTime % video.duration;
+                if (state.targetVideoTime < 0) state.targetVideoTime += video.duration;
+
                 // 只有当 video 没有 seek 时才更新
                 if (!video.seeking) {
                     const diff = Math.abs(video.currentTime - state.targetVideoTime);
-                    if (diff > 0.03) {
+                    // 细化容差值：对于普通 mp4 帧率较高需要精确更新
+                    if (diff > 0.01) {
                         video.currentTime = state.targetVideoTime;
                     }
                 }
